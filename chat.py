@@ -1,6 +1,7 @@
 import yaml
 import tiktoken
 from openai import AzureOpenAI
+from azure.storage.blob import ContainerClient
 from logger import DiPLogger
 from utils import format_terminal_text
 
@@ -32,7 +33,6 @@ class AiAgent:
         # Start with a system prompt and empty conversation
         self.system_prompt = "You are a helpful chat assistant."
         self.conversation = [{"role": "system", "content": self.system_prompt}]
-
         self.total_token_counter = 0   
 
         try:
@@ -44,6 +44,16 @@ class AiAgent:
 
         self.logger.info(f"Using encoder: {encoder_from}")
 
+        # Storage container
+        self.storage_connection_string = config['azure_blob']['connection_string']
+        self.container = config['azure_blob']['container_name']
+
+        # list of tools for agent:
+        self.tools = {
+            "list_files": self.list_blob_files,
+        }
+
+        
 
     def ask(self, user_prompt: str,
                       system_prompt: str = 'You are chat assistant and willing to help to a human user.',
@@ -68,8 +78,8 @@ class AiAgent:
 
         return reply
 
-    def chat(self, user_prompt: str, temperature: float = 0.5, max_tokens: int = 10000) -> str:
-        self.logger.info("Adding user message to chat history...")
+    def chat(self, user_prompt: str, temperature: float = 0.5, max_tokens: int = 1000) -> str:
+        #self.logger.info("Adding user message to chat history...")
         self.conversation.append({"role": "user", "content": user_prompt})
 
         response = self.client.chat.completions.create(
@@ -152,10 +162,27 @@ class AiAgent:
 
             assistant_tokens = self.count_tokens(response)
             self.total_token_counter += user_tokens + assistant_tokens
-            total_tokens_formatter = format_terminal_text(text=f'Total tokens: {self.total_token_counter}', color="red", bold=True)
+            total_tokens_formatter = format_terminal_text(text=f'Total tokens on chat history: {self.total_token_counter}', color="red", bold=True)
 
-            self.logger.info(f"User tokens: {user_tokens} | Assistant tokens: {assistant_tokens} | {total_tokens_formatter}")
+            self.logger.info(f"Last user message tokens: {user_tokens} | Last assistant message tokens: {assistant_tokens} | {total_tokens_formatter}")
+
+    def list_blob_files(self, container_name: str = None) -> list:
+        if container_name is None:
+            container_name = self.container
+        self.logger.info(f"Listing blobs in container: {container_name}")
+        
+        container_client = ContainerClient.from_connection_string(
+            conn_str=self.storage_connection_string,
+            container_name=container_name
+        )
+
+        blob_list = container_client.list_blobs()
+        files = [blob.name for blob in blob_list]
+        
+        self.logger.info(f"Found {len(files)} files in container.")
+        return files
 
 if __name__ == "__main__":
     agent = AiAgent()
+    #print(agent.list_blob_files())
     agent.start()
