@@ -1,7 +1,8 @@
 import yaml
-import openai
+import tiktoken
 from openai import AzureOpenAI
 from logger import DiPLogger
+from utils import format_terminal_text
 
 class AiAgent:
     def __init__(self, name: str = 'AiAgent', config_path: str = 'config/settings.yaml'):
@@ -31,6 +32,17 @@ class AiAgent:
         # Start with a system prompt and empty conversation
         self.system_prompt = "You are a helpful chat assistant."
         self.conversation = [{"role": "system", "content": self.system_prompt}]
+
+        self.total_token_counter = 0   
+
+        try:
+            self.encoding = tiktoken.encoding_for_model(self.model_name)
+            encoder_from = self.model_name
+        except KeyError:
+            encoder_from = "cl100k_base"
+            self.encoding = tiktoken.encoding_for_model(self.model_name)
+
+        self.logger.info(f"Using encoder: {encoder_from}")
 
 
     def ask(self, user_prompt: str,
@@ -71,15 +83,35 @@ class AiAgent:
         self.conversation.append({"role": "assistant", "content": reply})
         return reply
 
+
+    def count_tokens(self, message):
+
+        # This structure is valid for GPT-4-turbo / o1
+        # Every message follows <|start|>{role/name}\n{content}<|end|>\n
+        tokens_per_message = 3
+        tokens_per_name = 1
+        total_tokens = 0
+
+        total_tokens += tokens_per_message
+        total_tokens += len(self.encoding.encode(message))
+        total_tokens += tokens_per_name
+        total_tokens += 3  # Priming
+
+        return total_tokens
+
     def reset_conversation(self):
         self.logger.info("Resetting conversation history...")
         self.conversation = [{"role": "system", "content": self.system_prompt}]
 
     def start(self):
         self.logger.info("Starting conversation...")
-        print(f"{self.assistant_name}: {self.system_prompt}")
+
+        user_name_formated = format_terminal_text(text=self.user_name, color="green", bold=True)
+        ai_name_formated = format_terminal_text(text=self.assistant_name, color="cyan", bold=True)
+        system_name_formated = format_terminal_text(text='system', color="yellow", bold=True)
         while True:
-            user_input = input(f"{self.user_name}: ")
+            
+            user_input = input(f"{user_name_formated}: ")
             if user_input.lower() == "exit":
                 print("Exiting chat...")
                 break
@@ -89,8 +121,41 @@ class AiAgent:
                 print(f"{self.assistant_name}: Conversation reset.")
                 continue
 
+            if user_input.lower() == "count_tokens":
+                total_tokens = self.count_tokens()
+                print(f"{self.assistant_name}: Total tokens in conversation: {total_tokens}")
+                continue
+
+            if user_input.lower() == "show_chat":
+                
+                print("Chat history:")
+                print("-" * 50)
+                for message in self.conversation:
+                    role = message["role"]
+                    content = message["content"]
+
+                    if role == "assistant":
+                        print(f"{ai_name_formated}: {content}")
+                        print("-" * 50)
+                    elif role == "user":
+                        print(f"{user_name_formated}: {content}")
+                    elif role == "system":
+                        print(f"{system_name_formated}: {content}")
+                    else:
+                        print(f"{role}: {content}")
+                continue
+
             response = self.chat(user_input)
-            print(f"{self.assistant_name}: {response}")
+            user_tokens = self.count_tokens(user_input)
+
+            print(f"{ai_name_formated}: {response}")
+
+            assistant_tokens = self.count_tokens(response)
+            self.total_token_counter += user_tokens + assistant_tokens
+            total_tokens_formatter = format_terminal_text(text=f'Total tokens: {self.total_token_counter}', color="red", bold=True)
+
+            self.logger.info(f"User tokens: {user_tokens} | Assistant tokens: {assistant_tokens} | {total_tokens_formatter}")
+
 if __name__ == "__main__":
     agent = AiAgent()
     agent.start()
