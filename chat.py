@@ -1,4 +1,6 @@
 import yaml
+import json
+
 import tiktoken
 from openai import AzureOpenAI
 from azure.storage.blob import ContainerClient
@@ -6,12 +8,12 @@ from logger import DiPLogger
 from utils import format_terminal_text
 
 class AiAgent:
-    def __init__(self, name: str = 'AiAgent', config_path: str = 'config/settings.yaml'):
+    def __init__(self, name: str = 'Ai Agent', config_path: str = 'config/settings.yaml'):
         self.name = name
 
-        self.assistant_name = 'AI Assistant'
+        self.assistant_name = 'AI Agent'
         self.user_name = 'Human User'
-        self.logger = DiPLogger(logger_name=name)
+        self.logger = DiPLogger(logger_name=name, log_level="DEBUG")
 
         self.logger.info(f'Loading config file from \'{config_path}\'...')
         with open(config_path) as f:
@@ -49,11 +51,56 @@ class AiAgent:
         self.container = config['azure_blob']['container_name']
 
         # list of tools for agent:
-        self.tools = {
-            "list_files": self.list_blob_files,
-        }
+        # self.tools = {
+        #     "list_files": self.list_blob_files,
+        # }
 
-        
+        self.tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get the current weather for a specified location.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "location": {
+                                "type": "string",
+                                "description": "The city or location to get the weather for."
+                            }
+                        },
+                        "required": ["location"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_files_in_blob",
+                    "description": "List files in an given Azure Blob Storage container.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "container_name": {
+                                "type": "string",
+                                "description": "Name of the Azure Blob Storage container."
+                            }
+                        },
+                        "required": ["container_name"]
+                    }
+                }
+            }
+        ]
+
+    def get_weather(self, location: str) -> dict:
+        self.logger.info(f"Getting weather for location: {location}")
+        return {"location": location, "temperature": "25°C", "condition": "Sunny"}
+
+    def get_files_in_blob(self, container_name: str) -> dict:
+        self.logger.info(f"Getting files in blob container: {container_name}")
+        return {
+            "container_name": container_name,
+            "files": ["file1.txt", "file2.txt", "file3.txt"]}
 
     def ask(self, user_prompt: str,
                       system_prompt: str = 'You are chat assistant and willing to help to a human user.',
@@ -86,10 +133,59 @@ class AiAgent:
             model=self.deployment,
             messages=self.conversation,
             #temperature=temperature,
+            tools=self.tools,
+            max_completion_tokens=max_tokens,
+        )
+        if response.choices[0].message.tool_calls:
+            self.logger.info(f"A call to tools have been performed: \'{response.choices[0].message.tool_calls}\'")
+            for tool_call in response.choices[0].message.tool_calls:
+                function_name = tool_call.function.name
+                arguments = json.loads(tool_call.function.arguments)
+
+                match function_name:
+                    case "get_weather":
+                        self.conversation.append(
+                            {"role": "assistant",
+                            "content": None,
+                            "tool_calls": [{
+                                "id": tool_call.id,
+                                "type": "function",
+                                "function": {
+                                "name": function_name,
+                                "arguments": str(arguments)
+                                }
+                                }]
+                            })
+                        tools_result = self.get_weather(arguments.get("location"))
+                    case "get_files_in_blob":
+                        tools_result = self.list_blob_files(arguments.get("container_name"))
+                        self.conversation.append(
+                            {"role": "assistant",
+                            "content": None,
+                            "tool_calls": [{
+                                "id": tool_call.id,
+                                "type": "function",
+                                "function": {
+                                "name": function_name,
+                                "arguments": str(arguments)
+                                }
+                                }]
+                            })
+                    case _:
+                        self.logger.warning(f"Unknown function call: {function_name}")
+                        tools_result = {"error": f"Unknown function call \'{function_name}\'"}
+                self.logger.info(f"Function call result: {tools_result}")
+                self.conversation.append({"role": "tool", "content": json.dumps(tools_result), "tool_call_id": tool_call.id})
+                self.logger.debug(f"Tool call result added to conversation history: {self.conversation}")
+        
+        final_response = self.client.chat.completions.create(
+            model=self.deployment,
+            messages=self.conversation,
+            tools=self.tools,
             max_completion_tokens=max_tokens,
         )
 
-        reply = response.choices[0].message.content
+        reply = final_response.choices[0].message.content
         self.conversation.append({"role": "assistant", "content": reply})
         return reply
 
