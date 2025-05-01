@@ -8,7 +8,7 @@ from logger import DiPLogger
 from utils import format_terminal_text
 
 class AiAgent:
-    def __init__(self, name: str = 'Ai Agent', config_path: str = 'config/settings.yaml'):
+    def __init__(self, name: str = 'AI Agent', config_path: str = 'config/settings.yaml'):
         self.name = name
 
         self.assistant_name = 'AI Agent'
@@ -19,6 +19,7 @@ class AiAgent:
         with open(config_path) as f:
             config = yaml.safe_load(f)
 
+        # Load azure OpenAI configuration
         self.endpoint = config['azure_openai']['endpoint']
         self.model_name = config['azure_openai']['model_name']
         self.deployment = config['azure_openai']['deployment']
@@ -46,15 +47,11 @@ class AiAgent:
 
         self.logger.info(f"Using encoder: {encoder_from}")
 
-        # Storage container
+        # Load Azure storage account configuration
         self.storage_connection_string = config['azure_blob']['connection_string']
         self.container = config['azure_blob']['container_name']
 
-        # list of tools for agent:
-        # self.tools = {
-        #     "list_files": self.list_blob_files,
-        # }
-
+        # Available tools for the agent
         self.tools = [
             {
                 "type": "function",
@@ -115,7 +112,7 @@ class AiAgent:
     def ask(self, user_prompt: str,
                       system_prompt: str = 'You are chat assistant and willing to help to a human user.',
                       temperature: float = 0.5,
-                      max_completion_tokens: int = 1000) -> str:
+                      max_completion_tokens: int = 10000) -> str:
         """
         Ask something to the OpenAI model and get the response.
         """
@@ -135,7 +132,7 @@ class AiAgent:
 
         return reply
 
-    def chat(self, user_prompt: str, temperature: float = 0.5, max_tokens: int = 1000) -> str:
+    def chat(self, user_prompt: str, temperature: float = 0.5, max_tokens: int = 10000) -> str:
         #self.logger.info("Adding user message to chat history...")
         self.conversation.append({"role": "user", "content": user_prompt})
 
@@ -157,30 +154,24 @@ class AiAgent:
 
                 match function_name:
                     case "get_weather":
-                        tool_calls_list.append({
-                                "id": tool_call.id,
-                                "type": "function",
-                                "function": {
-                                "name": function_name,
-                                "arguments": str(arguments)
-                                }
-                                })
                         tools_result_i = self.get_weather(arguments.get("location"))
                     case "get_files_in_blob":
-                        tool_calls_list.append({
-                                "id": tool_call.id,
-                                "type": "function",
-                                "function": {
-                                "name": function_name,
-                                "arguments": str(arguments)
-                                }
-                                })
-
                         tools_result_i = self.list_blob_files(arguments.get("container_name"))
                     case _:
-                        self.logger.warning(f"Unknown function call: {function_name}")
+                        self.logger.error(f"Unknown function call: {function_name}")
                         tools_result_i = {"error": f"Unknown function call \'{function_name}\'"}
+                        self.logger.error(f"Non existen function call returned: {tools_result_i}")
+                        continue
+
                 self.logger.debug(f"Function call result: {tools_result_i}")
+                tool_calls_list.append({
+                    "id": tool_call.id,
+                    "type": "function",
+                    "function": {
+                        "name": function_name,
+                        "arguments": str(arguments)
+                        }
+                    })
                 tool_response_list.append(
                     {"role": "tool",
                      #"name": function_name,
