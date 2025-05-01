@@ -9,7 +9,8 @@ class DiPLogger(object):
     """
     def __init__(self, logger_name: str = 'DiP Logger', log_level=logging.INFO, log_to_stdout: bool = True,
                  log_to_file: bool = False, log_file_folder_path: str ='./',
-                 prefix: str = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')):
+                 prefix: str = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S'),
+                 logger_name_max_length: int = None) -> None:
         """
         Initializes the DiPLogger.
 
@@ -23,7 +24,8 @@ class DiPLogger(object):
             prefix (str): prefix to add to the logger file name. It defaults to a 'now' datetime
         """
 
-        self.logger_name_max_length = 15
+        if logger_name_max_length is None:
+            self.logger_name_max_length = len(str(logger_name))
         # additional parameters
         self.log_to_stdout = log_to_stdout
         self.log_to_file = log_to_file
