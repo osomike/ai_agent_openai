@@ -132,7 +132,7 @@ class AiAgent:
 
         return reply
 
-    def chat(self, user_prompt: str, temperature: float = 0.5, max_tokens: int = 1000) -> str:
+    def chat(self, user_prompt: str, temperature: float = 0.5, max_tokens: int = 10000) -> str:
         #self.logger.info("Adding user message to chat history...")
         self.conversation.append({"role": "user", "content": user_prompt})
 
