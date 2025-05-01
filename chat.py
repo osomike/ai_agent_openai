@@ -93,14 +93,24 @@ class AiAgent:
         ]
 
     def get_weather(self, location: str) -> dict:
-        self.logger.info(f"Getting weather for location: {location}")
+        self.logger.debug(f"Getting weather for location: {location}")
         return {"location": location, "temperature": "25°C", "condition": "Sunny"}
 
-    def get_files_in_blob(self, container_name: str) -> dict:
-        self.logger.info(f"Getting files in blob container: {container_name}")
-        return {
-            "container_name": container_name,
-            "files": ["file1.txt", "file2.txt", "file3.txt"]}
+    def list_blob_files(self, container_name: str = None) -> list:
+        if container_name is None:
+            container_name = self.container
+        self.logger.debug(f"Listing blobs in container: {container_name}")
+        
+        container_client = ContainerClient.from_connection_string(
+            conn_str=self.storage_connection_string,
+            container_name=container_name
+        )
+
+        blob_list = container_client.list_blobs()
+        files = [blob.name for blob in blob_list]
+        
+        self.logger.debug(f"Found {len(files)} files in container.")
+        return {"container_name": container_name, "files": files}
 
     def ask(self, user_prompt: str,
                       system_prompt: str = 'You are chat assistant and willing to help to a human user.',
@@ -174,7 +184,7 @@ class AiAgent:
                     case _:
                         self.logger.warning(f"Unknown function call: {function_name}")
                         tools_result = {"error": f"Unknown function call \'{function_name}\'"}
-                self.logger.info(f"Function call result: {tools_result}")
+                self.logger.debug(f"Function call result: {tools_result}")
                 self.conversation.append({"role": "tool", "content": json.dumps(tools_result), "tool_call_id": tool_call.id})
                 self.logger.debug(f"Tool call result added to conversation history: {self.conversation}")
         
@@ -261,22 +271,6 @@ class AiAgent:
             total_tokens_formatter = format_terminal_text(text=f'Total tokens on chat history: {self.total_token_counter}', color="red", bold=True)
 
             self.logger.info(f"Last user message tokens: {user_tokens} | Last assistant message tokens: {assistant_tokens} | {total_tokens_formatter}")
-
-    def list_blob_files(self, container_name: str = None) -> list:
-        if container_name is None:
-            container_name = self.container
-        self.logger.info(f"Listing blobs in container: {container_name}")
-        
-        container_client = ContainerClient.from_connection_string(
-            conn_str=self.storage_connection_string,
-            container_name=container_name
-        )
-
-        blob_list = container_client.list_blobs()
-        files = [blob.name for blob in blob_list]
-        
-        self.logger.info(f"Found {len(files)} files in container.")
-        return files
 
 if __name__ == "__main__":
     agent = AiAgent()
