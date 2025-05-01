@@ -148,46 +148,53 @@ class AiAgent:
         )
         if response.choices[0].message.tool_calls:
             self.logger.info(f"A call to tools have been performed: \'{response.choices[0].message.tool_calls}\'")
+
+            tool_calls_list = []
+            tool_response_list = []
             for tool_call in response.choices[0].message.tool_calls:
                 function_name = tool_call.function.name
                 arguments = json.loads(tool_call.function.arguments)
 
                 match function_name:
                     case "get_weather":
-                        self.conversation.append(
-                            {"role": "assistant",
-                            "content": None,
-                            "tool_calls": [{
+                        tool_calls_list.append({
                                 "id": tool_call.id,
                                 "type": "function",
                                 "function": {
                                 "name": function_name,
                                 "arguments": str(arguments)
                                 }
-                                }]
-                            })
-                        tools_result = self.get_weather(arguments.get("location"))
+                                })
+                        tools_result_i = self.get_weather(arguments.get("location"))
                     case "get_files_in_blob":
-                        tools_result = self.list_blob_files(arguments.get("container_name"))
-                        self.conversation.append(
-                            {"role": "assistant",
-                            "content": None,
-                            "tool_calls": [{
+                        tool_calls_list.append({
                                 "id": tool_call.id,
                                 "type": "function",
                                 "function": {
                                 "name": function_name,
                                 "arguments": str(arguments)
                                 }
-                                }]
-                            })
+                                })
+
+                        tools_result_i = self.list_blob_files(arguments.get("container_name"))
                     case _:
                         self.logger.warning(f"Unknown function call: {function_name}")
-                        tools_result = {"error": f"Unknown function call \'{function_name}\'"}
-                self.logger.debug(f"Function call result: {tools_result}")
-                self.conversation.append({"role": "tool", "content": json.dumps(tools_result), "tool_call_id": tool_call.id})
-                self.logger.debug(f"Tool call result added to conversation history: {self.conversation}")
-        
+                        tools_result_i = {"error": f"Unknown function call \'{function_name}\'"}
+                self.logger.debug(f"Function call result: {tools_result_i}")
+                tool_response_list.append(
+                    {"role": "tool",
+                     #"name": function_name,
+                     "content": json.dumps(tools_result_i),
+                     "tool_call_id": tool_call.id})
+
+            self.conversation.append(
+                            {"role": "assistant",
+                            "content": None,
+                            "tool_calls": tool_calls_list})
+            for tool_response in tool_response_list:
+                self.conversation.append(tool_response)
+            self.logger.debug(f"Tool call result added to conversation history: {self.conversation}")
+
         final_response = self.client.chat.completions.create(
             model=self.deployment,
             messages=self.conversation,
