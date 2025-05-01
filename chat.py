@@ -34,7 +34,10 @@ class AiAgent:
         )
 
         # Start with a system prompt and empty conversation
-        self.system_prompt = "You are a helpful chat assistant."
+        self.system_prompt = \
+            "You are a helpful AI assistant. You have access to several tools and can use more than one tool if the " \
+            "user request requires it. Always reason about whether one or multiple tool calls are needed before " \
+            "responding."
         self.conversation = [{"role": "system", "content": self.system_prompt}]
         self.total_token_counter = 0   
 
@@ -212,7 +215,10 @@ class AiAgent:
         total_tokens = 0
 
         total_tokens += tokens_per_message
-        total_tokens += len(self.encoding.encode(message))
+        if message:
+            total_tokens += len(self.encoding.encode(message))
+        else:
+            self.logger.warning("Empty message, no tokens counted.")
         total_tokens += tokens_per_name
         total_tokens += 3  # Priming
 
@@ -270,6 +276,10 @@ class AiAgent:
                         print(f"{tool_name_formated}:\n\t{content_label_formated}: {content}")
                     else:
                         print(f"{role}: {content}")
+                continue
+
+            if user_input.lower() == "print/":
+                print(f"Chat history:\n\n {self.conversation}")
                 continue
 
             response = self.chat(user_input)
