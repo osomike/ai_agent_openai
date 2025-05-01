@@ -6,7 +6,7 @@ from openai import AzureOpenAI
 from azure.storage.blob import ContainerClient
 from logger import DiPLogger
 from utils import format_terminal_text
-
+from azure.core import exceptions as azure_exceptions
 class AiAgent:
     def __init__(self, name: str = 'AI Agent', config_path: str = 'config/settings.yaml'):
         self.name = name
@@ -104,9 +104,14 @@ class AiAgent:
         )
 
         blob_list = container_client.list_blobs()
-        files = [blob.name for blob in blob_list]
-        
-        self.logger.debug(f"Found {len(files)} files in container.")
+        self.logger.debug(f"blob list {blob_list}")
+        try:
+            files = [blob.name for blob in blob_list]
+            self.logger.debug(f"Found {len(files)} files in container.")
+        except azure_exceptions.HttpResponseError as e:
+            self.logger.error(f"Error listing blobs from container {container_name}: {e}")
+            files = []
+
         return {"container_name": container_name, "files": files}
 
     def ask(self, user_prompt: str,
@@ -188,6 +193,7 @@ class AiAgent:
 
         final_response = self.client.chat.completions.create(
             model=self.deployment,
+            tools=self.tools,
             messages=self.conversation,
             max_completion_tokens=max_tokens,
         )
