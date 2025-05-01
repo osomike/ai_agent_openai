@@ -198,7 +198,6 @@ class AiAgent:
         final_response = self.client.chat.completions.create(
             model=self.deployment,
             messages=self.conversation,
-            tools=self.tools,
             max_completion_tokens=max_tokens,
         )
 
@@ -232,38 +231,46 @@ class AiAgent:
         user_name_formated = format_terminal_text(text=self.user_name, color="green", bold=True)
         ai_name_formated = format_terminal_text(text=self.assistant_name, color="cyan", bold=True)
         system_name_formated = format_terminal_text(text='system', color="yellow", bold=True)
+        tool_name_formated = format_terminal_text(text='AI tool', color="magenta", bold=True)
+        content_label_formated = format_terminal_text(text='content', color="red", bold=False)
+        message_label_formated = format_terminal_text(text='message', color="red", bold=False)
+        tool_calls_label_formated = format_terminal_text(text='tool_calls', color="red", bold=False)
         while True:
             
             user_input = input(f"{user_name_formated}: ")
-            if user_input.lower() == "exit":
+            if user_input.lower() == "exit/":
                 print("Exiting chat...")
                 break
 
-            if user_input.lower() == "reset":
+            if user_input.lower() == "reset/":
                 self.reset_conversation()
                 print(f"{self.assistant_name}: Conversation reset.")
                 continue
 
-            if user_input.lower() == "count_tokens":
+            if user_input.lower() == "tokens/":
                 total_tokens = self.count_tokens()
                 print(f"{self.assistant_name}: Total tokens in conversation: {total_tokens}")
                 continue
 
-            if user_input.lower() == "show_chat":
+            if user_input.lower() == "history/":
                 
                 print("Chat history:")
                 print("-" * 50)
                 for message in self.conversation:
                     role = message["role"]
                     content = message["content"]
+                    tool_calls = message.get("tool_calls", None)
 
                     if role == "assistant":
-                        print(f"{ai_name_formated}: {content}")
-                        print("-" * 50)
+                        print(f"{ai_name_formated}:\n\t{content_label_formated}: {content}\n\t{tool_calls_label_formated}: {tool_calls}")
+                        if tool_calls is None:
+                            print("-" * 50)
                     elif role == "user":
-                        print(f"{user_name_formated}: {content}")
+                        print(f"{user_name_formated}:\n\t{content_label_formated}: {content}")
                     elif role == "system":
-                        print(f"{system_name_formated}: {content}")
+                        print(f"{system_name_formated}:\n\t{content_label_formated}: {content}")
+                    elif role == "tool":
+                        print(f"{tool_name_formated}:\n\t{content_label_formated}: {content}")
                     else:
                         print(f"{role}: {content}")
                 continue
