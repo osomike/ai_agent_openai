@@ -1,3 +1,4 @@
+import os
 import yaml
 import json
 
@@ -18,6 +19,9 @@ class AiAgent:
         self.logger.info(f'Loading config file from \'{config_path}\'...')
         with open(config_path) as f:
             config = yaml.safe_load(f)
+
+        # Load local configurations
+        self.local_folder = config['local_storage']['folder']
 
         # Load azure OpenAI configuration
         self.endpoint = config['azure_openai']['endpoint']
@@ -76,7 +80,24 @@ class AiAgent:
             {
                 "type": "function",
                 "function": {
-                    "name": "get_files_in_blob",
+                    "name": "list_files_in_local_folder",
+                    "description": "List files present locally in a given folder.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "local_folder": {
+                                "type": "string",
+                                "description": "Path to the local folder, from where the files will be listed."
+                            }
+                        },
+                        #"required": ["container_name"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "list_files_in_blob",
                     "description": "List files in an given Azure Blob Storage container.",
                     "parameters": {
                         "type": "object",
@@ -89,12 +110,74 @@ class AiAgent:
                         "required": ["container_name"]
                     }
                 }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "download_blob",
+                    "description": "Download a file from an Azure Blob Storage container.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "container_name": {
+                                "type": "string",
+                                "description": "Name of the Azure Blob Storage container."
+                            },
+                            "blob_name": {
+                                "type": "string",
+                                "description": "Blob or file name to download inside the Azure Blob Storage container."
+                            }
+                        },
+                        "required": ["blob_name"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "upload_blob",
+                    "description": "Upload a local file to an Azure Blob Storage container.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            # "container_name": {
+                            #     "type": "string",
+                            #     "description": "Name of the Azure Blob Storage container."
+                            # },
+                            "local_file_path": {
+                                "type": "string",
+                                "description": "Local file path of file to upload to the Azure Blob Storage container."
+                            }
+                        },
+                        "required": ["local_file_path"]
+                    }
+                }
             }
         ]
 
     def get_weather(self, location: str) -> dict:
         self.logger.debug(f"Getting weather for location: {location}")
         return {"location": location, "temperature": "25°C", "condition": "Sunny"}
+
+    def list_local_folder(self, local_folder: str = None) -> list:
+        if local_folder is None:
+            local_folder = self.local_folder
+        self.logger.debug(f"Scanning local folder: {local_folder}")
+
+        try:
+            files = []
+            for root, _, filenames in os.walk(local_folder):
+                for filename in filenames:
+                    file_path = os.path.join(root, filename)
+                    files.append(file_path)
+            self.logger.debug(f"Found {len(files)} files in folder.")
+            status = "success"
+        except Exception as e:
+            self.logger.error(f"Error scanning folder {local_folder}: {e}")
+            files = []
+            status = "error"
+
+        return {"local_folder": local_folder, "files": files, "status": status}
 
     def list_blob_files(self, container_name: str = None) -> list:
         if container_name is None:
@@ -116,6 +199,55 @@ class AiAgent:
             files = []
 
         return {"container_name": container_name, "files": files}
+
+    def download_blob(self, blob_name: str, container_name: str = None) -> list:
+        if container_name is None:
+            container_name = self.container
+        self.logger.debug(f"Downloading: {blob_name} from container: {container_name}")
+
+        container_client = ContainerClient.from_connection_string(
+            conn_str=self.storage_connection_string,
+            container_name=container_name
+        )
+
+        try:
+            #blob = container_client.download_blob(blob=blob_name)
+            output_file = os.path.join(self.local_folder, os.path.basename(blob_name))
+            self.logger.info(f"Downloading blob to: {output_file}")
+            with open(file=output_file, mode="wb") as sample_blob:
+                download_stream = container_client.download_blob(blob=blob_name)
+                sample_blob.write(download_stream.readall())
+            status = "success"
+        except azure_exceptions.HttpResponseError as e:
+            self.logger.error(f"Error while downloading the blob {blob_name}: {e}")
+            status = "error"
+
+        return {"container_name": container_name, "output_file": output_file, "status": status}
+
+    def upoad_blob(self, local_file_path: str, target_folder : str = "drop_zone", container_name: str = None) -> list:
+        if container_name is None:
+            container_name = self.container
+        if target_folder is None:
+            target_folder = "drop_zone"
+        self.logger.debug(f"Attempting to uploading: {local_file_path} to container: {container_name} in folder: {target_folder}")
+
+        container_client = ContainerClient.from_connection_string(
+            conn_str=self.storage_connection_string,
+            container_name=container_name
+        )
+
+        try:
+            #blob = container_client.download_blob(blob=blob_name)
+            output_blob = os.path.join(target_folder, os.path.basename(local_file_path))
+            self.logger.info(f"Uploading blob to: {output_blob}")
+            with open(file=local_file_path, mode="rb") as data:
+                blob_client = container_client.upload_blob(name=output_blob, data=data, overwrite=True)
+            status = "success"
+        except azure_exceptions.HttpResponseError as e:
+            self.logger.error(f"Error while uploading the blob {output_blob}: {e}")
+            status = "error"
+
+        return {"container_name": container_name, "output_blob": output_blob, "status": status}
 
     def ask(self, user_prompt: str,
                       system_prompt: str = 'You are chat assistant and willing to help to a human user.',
@@ -163,8 +295,14 @@ class AiAgent:
                 match function_name:
                     case "get_weather":
                         tools_result_i = self.get_weather(arguments.get("location"))
-                    case "get_files_in_blob":
+                    case "list_files_in_local_folder":
+                        tools_result_i = self.list_local_folder(arguments.get("local_folder"))
+                    case "list_files_in_blob":
                         tools_result_i = self.list_blob_files(arguments.get("container_name"))
+                    case "download_blob":
+                        tools_result_i = self.download_blob(arguments.get("blob_name"), arguments.get("container_name"))
+                    case "upload_blob":
+                        tools_result_i = self.upoad_blob(arguments.get("local_file_path"), arguments.get("container_name"))
                     case _:
                         self.logger.error(f"Unknown function call: {function_name}")
                         tools_result_i = {"error": f"Unknown function call \'{function_name}\'"}
@@ -236,7 +374,6 @@ class AiAgent:
         system_name_formated = format_terminal_text(text='system', color="yellow", bold=True)
         tool_name_formated = format_terminal_text(text='AI tool', color="magenta", bold=True)
         content_label_formated = format_terminal_text(text='content', color="red", bold=False)
-        message_label_formated = format_terminal_text(text='message', color="red", bold=False)
         tool_calls_label_formated = format_terminal_text(text='tool_calls', color="red", bold=False)
         while True:
             
