@@ -83,4 +83,4 @@ class AzureOpenAIInterface:
             self.logger.error(f"Failed to generate chat completion: {e}")
             raise RuntimeError(f"Failed to generate chat completion: {e}")
 
-        return response.choices[0].message.content
+        return response #response.choices[0].message.content
