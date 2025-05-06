@@ -36,7 +36,7 @@ class AIAgent:
         # self.client = self._initialize_openai_client()
 
         # Initialize the tools manager
-        self.tools_manager = ToolsManager()
+        self.tools_manager = ToolsManager(config=self.config)
 
         # Initialize the text formatting
         self.formatted_names = {

@@ -1,19 +1,27 @@
 from utils.logger import Logger
 from tools.tools.weather import WeatherTools
 from tools.tools.jokes import JokesTool
+from tools.tools.azure_blob_storage import AzureBlobStorageTool
 
 class ToolsManager:
-    def __init__(self, logger: Logger = None):
+    def __init__(self, config: dict, logger: Logger = None):
         if logger:
             self.logger = logger
         else:
             self.logger = Logger(logger_name="ToolsManager")
 
+        # Initialize the tools
+        self.azure_blob_tool = AzureBlobStorageTool(config=config)
+
         self.tools = {
             "get_weather": WeatherTools().get_weather,
-            "get_random_joke": JokesTool().get_random_joke}
+            "get_random_joke": JokesTool().get_random_joke,
+            "list_blob_files": self.azure_blob_tool.list_blob_files,
+            "download_blob": self.azure_blob_tool.download_blob,
+            "upload_blob": self.azure_blob_tool.upload_blob,}
 
         self.tools_description = [
+            # Weather tools
             {
                 "type": "function",
                 "function": {
@@ -31,6 +39,7 @@ class ToolsManager:
                     }
                 }
             },
+            # Jokes tools
             {
                 "type": "function",
                 "function": {
@@ -48,6 +57,66 @@ class ToolsManager:
                     # }
                 }
             },
+            # Azure Blob Storage tools
+            {
+                "type": "function",
+                "function": {
+                    "name": "list_blob_files",
+                    "description": "List all files in a specified Azure Blob Storage container. If no container is specified, the default container will be used.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "container_name": {
+                                "type": "string",
+                                "description": "(Optional) The name of the Azure Blob Storage container."
+                            }
+                        },
+                        #"required": ["container_name"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "download_blob",
+                    "description": "Download a blob file from Azure Blob Storage. If no container is specified, the default container will be used.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "blob_name": {
+                                "type": "string",
+                                "description": "The name of the blob file to download."
+                            },
+                            "container_name": {
+                                "type": "string",
+                                "description": "(Optional) The name of the Azure Blob Storage container."
+                            }
+                        },
+                        "required": ["blob_name"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "upload_blob",
+                    "description": "Upload a file to an Azure Blob Storage. If no container is specified, the default container will be used.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "local_file_path": {
+                                "type": "string",
+                                "description": "Local file path of file to upload to the Azure Blob Storage container"
+                            },
+                            "container_name": {
+                                "type": "string",
+                                "description": "(Optional) The name of the Azure Blob Storage container."
+                            }
+                        },
+                        "required": ["local_file_path"]
+                    }
+                }
+            }
         ]
 
     def get_tool(self, name):
