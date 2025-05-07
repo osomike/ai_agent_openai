@@ -3,13 +3,13 @@ import os
 import datetime
 
 
-class DiPLogger(object):
+class Logger:
     """
-    A custom logger class for handling logging in Databricks notebooks.
+    A custom logger class for handling logging functionality.
     """
-    def __init__(self, logger_name: str = 'DiP Logger', log_level=logging.INFO, log_to_stdout: bool = True,
-                 log_to_file: bool = False, log_file_folder_path: str ='./',
-                 prefix: str = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S'),
+    def __init__(self, logger_name: str = "Default Logger", log_level=logging.INFO, log_to_stdout: bool = True,
+                 log_to_file: bool = False, log_file_folder_path: str ="./",
+                 prefix: str = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S"),
                  logger_name_max_length: int = None) -> None:
         """
         Initializes the DiPLogger.
@@ -39,7 +39,9 @@ class DiPLogger(object):
 
         # Define log formatting
         formatter = \
-            logging.Formatter(f'%(asctime)s | %(name)-{self.logger_name_max_length}s | %(levelname)-8s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+            logging.Formatter(
+                fmt=f"%(asctime)s | %(name)-{self.logger_name_max_length}s | %(levelname)-8s: %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S")
 
         # Clear existing handlers to avoid accumulation
         self.clear_handlers()
@@ -52,7 +54,7 @@ class DiPLogger(object):
 
         # Create a file handler if log_to_file is True
         if log_to_file:
-            file_handler = logging.FileHandler(self.log_file_path, mode='w')
+            file_handler = logging.FileHandler(self.log_file_path, mode="w")
             file_handler.setFormatter(formatter)
             file_handler.setLevel(log_level)
             self.logger.addHandler(file_handler)
