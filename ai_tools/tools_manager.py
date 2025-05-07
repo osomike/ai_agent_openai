@@ -1,7 +1,7 @@
 from utils.logger import Logger
 from ai_tools.tools.azure_blob_storage import AzureBlobStorageTool
 from ai_tools.tools.local import LocalStorageTool
-
+from ai_tools.tools.databricks import DatabricksTool
 class ToolsManager:
     def __init__(self, config: dict, logger: Logger = None):
         if logger:
@@ -12,12 +12,15 @@ class ToolsManager:
         # Initialize the tools
         self.azure_blob_tool = AzureBlobStorageTool(config=config)
         self.local_files_tool = LocalStorageTool(config=config)
+        self.databricks_tool = DatabricksTool(config=config)
 
         self.tools = {
             "list_blob_files": self.azure_blob_tool.list_blob_files,
             "download_blob": self.azure_blob_tool.download_blob,
             "upload_blob": self.azure_blob_tool.upload_blob,
-            "list_local_files": self.local_files_tool.list_local_files,}
+            "list_local_files": self.local_files_tool.list_local_files,
+            "run_databricks_job": self.databricks_tool.run_databricks_job,
+            }
 
         self.tools_description = [
             # Azure Blob Storage tools
@@ -105,7 +108,28 @@ class ToolsManager:
                         #"required": ["blob_name"]
                     }
                 }
-            }
+            },
+            # Databricks tools
+            {
+                "type": "function",
+                "function": {
+                    "name": "run_databricks_job",
+                    "description":
+                        "Trigger a job inside databricks",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "notebook_path": {
+                                "type": "string",
+                                "description":
+                                    "(Optional) The path of the notebook to trigger. If no path is " \
+                                    " specified, the default container will be used."
+                            }
+                        },
+                        #"required": ["notebook_path"]
+                    }
+                }
+            },
         ]
 
     def get_tool(self, name):
