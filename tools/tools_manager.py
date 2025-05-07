@@ -2,6 +2,7 @@ from utils.logger import Logger
 from tools.tools.weather import WeatherTools
 from tools.tools.jokes import JokesTool
 from tools.tools.azure_blob_storage import AzureBlobStorageTool
+from tools.tools.local import LocalStorageTool
 
 class ToolsManager:
     def __init__(self, config: dict, logger: Logger = None):
@@ -12,13 +13,15 @@ class ToolsManager:
 
         # Initialize the tools
         self.azure_blob_tool = AzureBlobStorageTool(config=config)
+        self.local_files_tool = LocalStorageTool(config=config)
 
         self.tools = {
             "get_weather": WeatherTools().get_weather,
             "get_random_joke": JokesTool().get_random_joke,
             "list_blob_files": self.azure_blob_tool.list_blob_files,
             "download_blob": self.azure_blob_tool.download_blob,
-            "upload_blob": self.azure_blob_tool.upload_blob,}
+            "upload_blob": self.azure_blob_tool.upload_blob,
+            "list_local_files": self.local_files_tool.list_local_files,}
 
         self.tools_description = [
             # Weather tools
@@ -114,6 +117,24 @@ class ToolsManager:
                             }
                         },
                         "required": ["local_file_path"]
+                    }
+                }
+            },
+            # Local Storage tools
+            {
+                "type": "function",
+                "function": {
+                    "name": "list_local_files",
+                    "description": "List local files on a given folder path. If no path is specified, the default path will be used.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "local_folder": {
+                                "type": "string",
+                                "description": "(Optional) The folder path where the files scan will be performed"
+                            }
+                        },
+                        #"required": ["blob_name"]
                     }
                 }
             }
