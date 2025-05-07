@@ -1,7 +1,7 @@
-from utils.logger import Logger
-
 import openai
 import tiktoken
+
+from utils.logger import Logger
 
 class AzureOpenAIInterface:
     def __init__(self, config: dict, logger: Logger = None):
@@ -38,7 +38,7 @@ class AzureOpenAIInterface:
             self.logger.info("Azure OpenAI client initialized successfully")
         except Exception as e:
             self.logger.error(f"Failed to initialize OpenAI client: {e}")
-            raise RuntimeError(f"Failed to initialize OpenAI client: {e}")
+            raise RuntimeError(f"Failed to initialize OpenAI client: {e}") from e
 
         return client
 
@@ -54,8 +54,7 @@ class AzureOpenAIInterface:
             encoder_from = "cl100k_base"
             encoding = tiktoken.encoding_for_model(self.model_name)
 
-        self.logger.info(f"Using encoder: {encoder_from}")
-        self.logger.info(f"Encoder initialized successfully")
+        self.logger.info(f"Encoder initialized successfully, using encoder: {encoder_from}")
 
         return encoding
 
@@ -81,6 +80,6 @@ class AzureOpenAIInterface:
             self.logger.info("Chat completion generated successfully")
         except Exception as e:
             self.logger.error(f"Failed to generate chat completion: {e}")
-            raise RuntimeError(f"Failed to generate chat completion: {e}")
+            raise RuntimeError(f"Failed to generate chat completion: {e}") from e
 
-        return response #response.choices[0].message.content
+        return response

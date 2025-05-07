@@ -1,3 +1,5 @@
+"""Main entry point for the AI Agent application."""
+
 from core.ai_agent import AIAgent
 
 ai_agent = AIAgent(config_path="config/settings.yaml")

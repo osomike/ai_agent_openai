@@ -29,11 +29,6 @@ class AIAgent:
             "user request requires it. Always reason about whether one or multiple tool calls are needed before " \
             "responding."
         self.conversation = [{"role": "system", "content": self.system_prompt}]
-        # self.tools = tool_manager.get_tools()
-        # self.blob_manager = blob_manager
-        # self.logger = logger
-        # self.conversation = [{"role": "system", "content": self.config['system_prompt']}]
-        # self.client = self._initialize_openai_client()
 
         # Initialize the tools manager
         self.tools_manager = ToolsManager(config=self.config)

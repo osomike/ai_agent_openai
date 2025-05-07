@@ -13,6 +13,19 @@ class LocalStorageTool:
         self.logger.info("Initializing Local Storage Manager")
 
     def list_local_files(self, local_folder: str) -> list:
+        """
+        Lists the files in a specified local folder.
+
+        Args:
+            local_folder (str): The path to the local folder. If None or an empty string is provided, 
+                                the default local folder will be used.
+
+        Returns:
+            dict: A dictionary containing:
+                - "local_folder" (str): The path of the folder that was listed.
+                - "files" (list): A list of file names in the specified folder. Empty if an error occurs.
+                - "status" (str): The status of the operation, either "success" or "error".
+        """
         if local_folder in [None, ""]:
             local_folder = self.default_local_folder
         self.logger.debug(f"Listing files in local folder: '{local_folder}'")

@@ -1,9 +1,9 @@
 import os
 
-from utils.logger import Logger
-
 from azure.storage.blob import ContainerClient
 from azure.core import exceptions as azure_exceptions
+
+from utils.logger import Logger
 
 class AzureBlobStorageTool:
 
@@ -21,6 +21,21 @@ class AzureBlobStorageTool:
         self.logger.info("Initializing Azure Blob Storage Manager")
 
     def list_blob_files(self, container_name: str = None) -> list:
+        """
+        Lists all blob files in the specified Azure Blob Storage container.
+
+        Args:
+            container_name (str, optional): The name of the container to list blobs from.
+                If not provided or is None/empty, the default container will be used.
+
+        Returns:
+            dict: A dictionary containing:
+                - "container_name" (str): The name of the container.
+                - "files" (list): A list of blob file names in the container.
+
+        Raises:
+            azure_exceptions.HttpResponseError: If there is an issue accessing the container or listing blobs.
+        """
 
         if container_name in [None, ""]:
             container_name = self.default_container
@@ -43,6 +58,24 @@ class AzureBlobStorageTool:
         return {"container_name": container_name, "files": files}
 
     def download_blob(self, blob_name: str, container_name: str = None) -> list:
+        """
+        Downloads a blob from an Azure Blob Storage container to a local file.
+
+        Args:
+            blob_name (str): The name of the blob to download.
+            container_name (str, optional): The name of the container from which to download the blob.
+                If not provided or empty, the default container will be used.
+
+        Returns:
+            dict: A dictionary containing the following keys:
+                - "container_name" (str): The name of the container from which the blob was downloaded.
+                - "output_file" (str): The local file path where the blob was downloaded.
+                - "status" (str): The status of the operation, either "success" or "error".
+
+        Raises:
+            azure_exceptions.HttpResponseError: If an error occurs during the blob download process.
+
+        """
 
         if container_name in [None, ""]:
             container_name = self.default_container
@@ -70,13 +103,38 @@ class AzureBlobStorageTool:
         return {"container_name": container_name, "output_file": output_file, "status": status}
 
     def upload_blob(self, local_file_path: str, target_folder : str = "drop_zone", container_name: str = None) -> list:
+        """
+        Uploads a local file to an Azure Blob Storage container.
+
+        Args:
+            local_file_path (str): The path to the local file to be uploaded.
+            target_folder (str, optional): The target folder within the container where the file will be uploaded. 
+                                           Defaults to "drop_zone".
+            container_name (str, optional): The name of the Azure Blob Storage container. If not provided, 
+                                            the default container will be used.
+
+        Returns:
+            dict: A dictionary containing the following keys:
+                - "container_name" (str): The name of the container where the file was uploaded.
+                - "output_blob" (str): The path of the uploaded blob within the container.
+                - "status" (str): The status of the upload operation ("success" or "error").
+
+        Raises:
+            azure_exceptions.HttpResponseError: If an error occurs during the upload process.
+
+        Notes:
+            - Logs debug and info messages during the upload process.
+            - Logs an error message if the upload fails.
+        """
         if container_name in [None, ""]:
             container_name = self.default_container
 
         if target_folder is None:
             target_folder = "drop_zone"
 
-        self.logger.debug(f"Attempting to upload: '{local_file_path}' to container: '{container_name}' in folder: '{target_folder}'")
+        self.logger.debug(
+            f"Attempting to upload: '{local_file_path}' to container: '{container_name}' in folder: " \
+            f"'{target_folder}'")
 
         container_client = ContainerClient.from_connection_string(
             conn_str=self.connection_string,
@@ -88,11 +146,10 @@ class AzureBlobStorageTool:
 
             self.logger.info(f"Uploading blob to: '{output_blob}'")
             with open(file=local_file_path, mode="rb") as data:
-                blob_client = container_client.upload_blob(name=output_blob, data=data, overwrite=True)
+                container_client.upload_blob(name=output_blob, data=data, overwrite=True)
             status = "success"
         except azure_exceptions.HttpResponseError as e:
             self.logger.error(f"Error while uploading the blob {output_blob}: {e}")
             status = "error"
 
         return {"container_name": container_name, "output_blob": output_blob, "status": status}
-

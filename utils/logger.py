@@ -3,9 +3,9 @@ import os
 import datetime
 
 
-class Logger(object):
+class Logger:
     """
-    A custom logger class for handling logging in Databricks notebooks.
+    A custom logger class for handling logging functionality.
     """
     def __init__(self, logger_name: str = "Default Logger", log_level=logging.INFO, log_to_stdout: bool = True,
                  log_to_file: bool = False, log_file_folder_path: str ="./",
@@ -39,7 +39,9 @@ class Logger(object):
 
         # Define log formatting
         formatter = \
-            logging.Formatter(f"%(asctime)s | %(name)-{self.logger_name_max_length}s | %(levelname)-8s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+            logging.Formatter(
+                fmt=f"%(asctime)s | %(name)-{self.logger_name_max_length}s | %(levelname)-8s: %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S")
 
         # Clear existing handlers to avoid accumulation
         self.clear_handlers()
