@@ -1,8 +1,8 @@
 from utils.logger import Logger
-from tools.tools.weather import WeatherTools
-from tools.tools.jokes import JokesTool
-from tools.tools.azure_blob_storage import AzureBlobStorageTool
-from tools.tools.local import LocalStorageTool
+from ai_tools.tools.weather import WeatherTools
+from ai_tools.tools.jokes import JokesTool
+from ai_tools.tools.azure_blob_storage import AzureBlobStorageTool
+from ai_tools.tools.local import LocalStorageTool
 
 class ToolsManager:
     def __init__(self, config: dict, logger: Logger = None):

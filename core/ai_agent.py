@@ -4,7 +4,7 @@ from config.config_loader import ConfigLoader
 from utils.clients import AzureOpenAIInterface
 from utils.logger import Logger
 from utils.text_formatting import format_terminal_text
-from tools.tools_manager import ToolsManager
+from ai_tools.tools_manager import ToolsManager
 
 class AIAgent:
     def __init__(self, config_path: str, logger: Logger = None):
