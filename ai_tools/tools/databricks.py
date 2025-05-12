@@ -1,5 +1,5 @@
-import requests
 import time
+import requests
 
 from utils.logger import Logger
 
@@ -42,7 +42,7 @@ class DatabricksTool:
 
         self.logger.info(f"Triggering notebook: {notebook_path}")
         try:
-            response = requests.post(url, headers=headers, json=payload)
+            response = requests.post(url, headers=headers, json=payload, timeout=200)
             response.raise_for_status()
             run_id = response.json().get("run_id")
             self.logger.info(f"Notebook triggered successfully. Run ID: {run_id}")
@@ -67,7 +67,7 @@ class DatabricksTool:
 
         self.logger.info(f"Checking status for run ID: {run_id}")
         try:
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params, timeout=200)
             response.raise_for_status()
             #print(response.json())
             state = response.json().get("state", {})
@@ -93,10 +93,10 @@ class DatabricksTool:
 
         self.logger.info(f"Retrieving output for run ID: {run_id}")
         try:
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params, timeout=200)
             response.raise_for_status()
             output = response.json().get("notebook_output", {})
-            self.logger.info(f"Run output retrieved successfully.")
+            self.logger.info(f"Run output for run '{run_id}' retrieved successfully.")
             return {"status": "success", "output": output}
         except requests.exceptions.RequestException as e:
             self.logger.error(f"Failed to retrieve run output: {e}")
@@ -104,6 +104,17 @@ class DatabricksTool:
 
 
     def run_databricks_job(self, notebook_path: str, parameters: dict = None) -> dict:
+        """
+        Executes a Databricks notebook job and monitors its status until completion.
+
+        Args:
+            notebook_path (str): The path to the Databricks notebook to execute. If None or an empty string is provided,
+                a default notebook path will be used.
+            parameters (dict, optional): A dictionary of parameters to pass to the notebook. Defaults to None.
+
+        Returns:
+            dict: The output of the completed Databricks job, including its results and status.
+        """
 
         if notebook_path in [None, ""]:
             notebook_path = "/Workspace/Users/oscar.claure@digital-power.com/test"
@@ -122,12 +133,12 @@ class DatabricksTool:
 
         while state in ["PENDING", "RUNNING"]:
             self.logger.info(f"Job still in process, sleeping for {sleep_time} seconds...")
-            time.sleep(sleep_time)    
+            time.sleep(sleep_time)
             response = self.check_run_status(run_id=run_id)
             state = response["state"]["life_cycle_state"]
             self.logger.info(f"Run ID: {run_id} has state: '{state}'")
 
-        self.logger.info(f"The job is completed, checking its return.")
+        self.logger.info("The job is completed, checking its return.")
         response = self.check_run_output(run_id=run_id)
         self.logger.info(f"Run ID: {run_id} has output: '{response}'")
         return response
