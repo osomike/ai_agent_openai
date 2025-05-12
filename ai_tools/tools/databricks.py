@@ -120,7 +120,7 @@ class DatabricksTool:
         state = "RUNNING"
         sleep_time = 5
 
-        while state == "RUNNING":
+        while state in ["PENDING", "RUNNING"]:
             self.logger.info(f"Job still in process, sleeping for {sleep_time} seconds...")
             time.sleep(sleep_time)    
             response = self.check_run_status(run_id=run_id)
