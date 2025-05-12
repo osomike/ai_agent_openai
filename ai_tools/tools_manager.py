@@ -18,7 +18,9 @@ class ToolsManager:
             "list_blob_files": self.azure_blob_tool.list_blob_files,
             "download_blob": self.azure_blob_tool.download_blob,
             "upload_blob": self.azure_blob_tool.upload_blob,
+            "delete_blob": self.azure_blob_tool.delete_blob,
             "list_local_files": self.local_files_tool.list_local_files,
+            "delete_local_file": self.local_files_tool.delete_local_file,
             "run_databricks_job": self.databricks_tool.run_databricks_job,
             }
 
@@ -89,6 +91,29 @@ class ToolsManager:
                     }
                 }
             },
+            {
+                "type": "function",
+                "function": {
+                    "name": "delete_blob",
+                    "description":
+                        "Delete a blob file from Azure Blob Storage. If no container is specified, the default " \
+                        "container will be used.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "blob_name": {
+                                "type": "string",
+                                "description": "The name of the blob file to download."
+                            },
+                            "container_name": {
+                                "type": "string",
+                                "description": "(Optional) The name of the Azure Blob Storage container."
+                            }
+                        },
+                        "required": ["blob_name"]
+                    }
+                }
+            },
             # Local Storage tools
             {
                 "type": "function",
@@ -106,6 +131,24 @@ class ToolsManager:
                             }
                         },
                         #"required": ["blob_name"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "delete_local_file",
+                    "description":
+                        "Delete a local file given its full path.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "file_path": {
+                                "type": "string",
+                                "description": "The full file path of the local file to delete"
+                            }
+                        },
+                        "required": ["file_path"]
                     }
                 }
             },

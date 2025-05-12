@@ -37,7 +37,7 @@ class AzureBlobStorageTool:
             azure_exceptions.HttpResponseError: If there is an issue accessing the container or listing blobs.
         """
 
-        if container_name in [None, ""]:
+        if container_name in [None, "", "{}"]:
             container_name = self.default_container
 
         self.logger.debug(f"Listing blobs in container: '{container_name}'")
@@ -126,10 +126,10 @@ class AzureBlobStorageTool:
             - Logs debug and info messages during the upload process.
             - Logs an error message if the upload fails.
         """
-        if container_name in [None, ""]:
+        if container_name in [None, "", "{}"]:
             container_name = self.default_container
 
-        if target_folder is None:
+        if target_folder in [None, "", "{}"]:
             target_folder = "drop_zone"
 
         self.logger.debug(
@@ -153,3 +153,40 @@ class AzureBlobStorageTool:
             status = "error"
 
         return {"container_name": container_name, "output_blob": output_blob, "status": status}
+
+    def delete_blob(self, blob_name: str, container_name: str = None) -> dict:
+        """
+        Deletes a blob from the specified Azure Blob Storage container.
+
+        Args:
+            blob_name (str): The name of the blob to delete.
+            container_name (str, optional): The name of the container from which the blob will be deleted.
+                If not provided or set to None/empty string, the default container will be used.
+
+        Returns:
+            dict: A dictionary containing the following keys:
+                - "container_name" (str): The name of the container from which the blob was deleted.
+                - "blob" (str): The name of the blob that was deleted.
+                - "status" (str): The status of the operation, either "success" or "error".
+        """
+        if container_name in [None, "", "{}"]:
+            container_name = self.default_container
+
+        self.logger.debug(f"Deleting: '{blob_name}' from container: '{container_name}'")
+
+        container_client = ContainerClient.from_connection_string(
+            conn_str=self.connection_string,
+            container_name=container_name
+        )
+
+        try:
+            self.logger.warning(f"Deleting blob: '{blob_name}'")
+
+            container_client.delete_blob(blob=blob_name)
+            status = "success"
+
+        except azure_exceptions.HttpResponseError as e:
+            self.logger.error(f"Error while deleting the blob {blob_name}: {e}")
+            status = "error"
+
+        return {"container_name": container_name, "blob": blob_name, "status": status}
