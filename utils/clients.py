@@ -51,8 +51,9 @@ class AzureOpenAIInterface:
             encoding = tiktoken.encoding_for_model(self.model_name)
             encoder_from = self.model_name
         except KeyError:
+            self.logger.warning(f"Model {self.model_name} not found in tiktoken encodings, using default encoder")
             encoder_from = "cl100k_base"
-            encoding = tiktoken.encoding_for_model(self.model_name)
+            encoding = tiktoken.get_encoding(encoder_from)
 
         self.logger.info(f"Encoder initialized successfully, using encoder: {encoder_from}")
 
