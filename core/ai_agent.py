@@ -150,6 +150,10 @@ class AIAgent:
                     self.logger.info("Printing conversation history...")
                     self.print_conversation()
                     continue
+                case "conversation/":
+                    self.logger.info("Printing conversation history...")
+                    print(json.dumps(self.conversation, indent=4))
+                    continue
                 case _:
                     reply = self.ask(user_input)
                     print(f"{self.formatted_names['assistant']}: {reply}")
