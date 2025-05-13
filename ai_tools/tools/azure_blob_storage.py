@@ -3,12 +3,14 @@ import os
 from azure.storage.blob import ContainerClient
 from azure.core import exceptions as azure_exceptions
 
+from ai_tools.tools.tools_abstract import AIToolsAbstract
 from utils.logger import Logger
 
-class AzureBlobStorageTool:
+class AzureBlobStorageTool(AIToolsAbstract):
 
     def __init__(self, config: dict, logger : Logger = None):
 
+        super().__init__()
         self.connection_string = config["azure_blob"]["connection_string"]
         self.local_folder = config["local_storage"]["folder"]
         self.default_container = config["azure_blob"]["default_container"]
@@ -19,6 +21,103 @@ class AzureBlobStorageTool:
             self.logger = Logger(logger_name="Blob Storage Manager")
 
         self.logger.info("Initializing Azure Blob Storage Manager")
+        self._tools = {
+            "list_blob_files": self.list_blob_files,
+            "download_blob": self.download_blob,
+            "upload_blob": self.upload_blob,
+            "delete_blob": self.delete_blob
+        }
+        self._tools_description = [
+            # Azure Blob Storage tools
+            {
+                "type": "function",
+                "function": {
+                    "name": "list_blob_files",
+                    "description":
+                        "List all files in a specified Azure Blob Storage container. If no container is " \
+                        "specified, the default container will be used.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "container_name": {
+                                "type": "string",
+                                "description": "(Optional) The name of the Azure Blob Storage container."
+                            }
+                        },
+                        #"required": ["container_name"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "download_blob",
+                    "description":
+                        "Download a blob file from Azure Blob Storage. If no container is specified, the default " \
+                        "container will be used.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "blob_name": {
+                                "type": "string",
+                                "description": "The name of the blob file to download."
+                            },
+                            "container_name": {
+                                "type": "string",
+                                "description": "(Optional) The name of the Azure Blob Storage container."
+                            }
+                        },
+                        "required": ["blob_name"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "upload_blob",
+                    "description":
+                        "Upload a file to an Azure Blob Storage. If no container is specified, the default container " \
+                        "will be used.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "local_file_path": {
+                                "type": "string",
+                                "description": "Local file path of file to upload to the Azure Blob Storage container"
+                            },
+                            "container_name": {
+                                "type": "string",
+                                "description": "(Optional) The name of the Azure Blob Storage container."
+                            }
+                        },
+                        "required": ["local_file_path"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "delete_blob",
+                    "description":
+                        "Delete a blob file from Azure Blob Storage. If no container is specified, the default " \
+                        "container will be used.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "blob_name": {
+                                "type": "string",
+                                "description": "The name of the blob file to download."
+                            },
+                            "container_name": {
+                                "type": "string",
+                                "description": "(Optional) The name of the Azure Blob Storage container."
+                            }
+                        },
+                        "required": ["blob_name"]
+                    }
+                }
+            },
+        ]
 
     def list_blob_files(self, container_name: str = None) -> list:
         """

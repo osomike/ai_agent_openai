@@ -2,9 +2,12 @@ import time
 import requests
 
 from utils.logger import Logger
+from ai_tools.tools.tools_abstract import AIToolsAbstract
 
-class DatabricksTool:
+class DatabricksTool(AIToolsAbstract):
     def __init__(self, config: dict, logger: Logger = None):
+
+        super().__init__()
         self.cluster_id = config["databricks"]["cluster_id"]
         self.workspace_url = config["databricks"]["workspace_url"]
         self.token = config["databricks"]["token"]
@@ -15,6 +18,37 @@ class DatabricksTool:
             self.logger = Logger(logger_name="Databricks Tool")
 
         self.logger.info("Initializing Databricks Tool")
+        self._tools = {
+            "run_databricks_job": self.run_databricks_job,
+        }
+        self._tools_description = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "run_databricks_job",
+                    "description":
+                        "Trigger a job inside databricks",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "notebook_path": {
+                                "type": "string",
+                                "description":
+                                    "(Optional) The path of the notebook to trigger. If no path is specified, " \
+                                    "the default path will be used."
+                            },
+                            "parameters": {
+                                "type": "object",
+                                "description":
+                                    "(Optional) A dictionary of parameters to pass to the notebook. Defaults to None.",
+                                "additionalProperties": True
+                            },
+                        #"required": ["notebook_path"]
+                        }
+                    }
+                }
+            }
+        ]
 
     def trigger_notebook(self, notebook_path: str, parameters: dict = None) -> dict:
         """
@@ -116,11 +150,13 @@ class DatabricksTool:
             dict: The output of the completed Databricks job, including its results and status.
         """
 
-        if notebook_path in [None, ""]:
-            notebook_path = "/Workspace/Users/oscar.claure@digital-power.com/test"
+        if parameters in [None, "", "{}"]:
             parameters = {
                 "param1": "I am an AI agent",
             }
+
+        if notebook_path in [None, "", "{}"]:
+            notebook_path = "/Workspace/Users/oscar.claure@digital-power.com/test"
 
         response = self.trigger_notebook(
             notebook_path=notebook_path,
@@ -141,12 +177,12 @@ class DatabricksTool:
         self.logger.info(f'Response from is: {response}')
         if response["state"]["result_state"] in ["FAILED", "CANCELED"]:
             self.logger.error(f"Job failed with error: {response['state']['state_message']}")
-            return {"status": "error", "message": response["state"]["state_message"]}
+            job_output = {"status": "error", "message": response["state"]["state_message"]}
         elif response["state"]["result_state"] == "SUCCESS":
             self.logger.info("The job is completed successfully, checking its return.")
             job_output = self.check_run_output(run_id=run_id)
             self.logger.info(f"Run ID: {run_id} has output: '{job_output}' from the notebook.")
         else:
             self.logger.error(f"Unknown result state: {response['state']['state_message']}")
-            return {"status": "error", "message": response["state"]["state_message"]}
+            job_output = {"status": "error", "message": response["state"]["state_message"]}
         return job_output

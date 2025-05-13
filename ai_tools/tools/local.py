@@ -1,8 +1,12 @@
 import os
 from utils.logger import Logger
+from ai_tools.tools.tools_abstract import AIToolsAbstract
 
-class LocalStorageTool:
+class LocalStorageTool(AIToolsAbstract):
+
     def __init__(self, config: dict, logger: Logger = None):
+
+        super().__init__()
         self.default_local_folder = config["local_storage"]["folder"]
 
         if logger:
@@ -11,6 +15,51 @@ class LocalStorageTool:
             self.logger = Logger(logger_name="Local Storage Tool")
 
         self.logger.info("Initializing Local Storage Manager")
+
+        self._tools = {
+            "list_local_files": self.list_local_files,
+            "delete_local_file": self.delete_local_file
+        }
+
+        self._tools_description = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "list_local_files",
+                    "description":
+                        "List local files on a given folder path. If no path is specified, the default path will " \
+                        "be used.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "local_folder": {
+                                "type": "string",
+                                "description": "(Optional) The folder path where the files scan will be performed"
+                            }
+                        },
+                        #"required": ["local_folder"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "delete_local_file",
+                    "description":
+                        "Delete a local file given its full path.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "file_path": {
+                                "type": "string",
+                                "description": "The full file path of the local file to delete"
+                            }
+                        },
+                        "required": ["file_path"]
+                    }
+                }
+            },
+        ]
 
     def list_local_files(self, local_folder: str) -> dict:
         """
