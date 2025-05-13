@@ -138,7 +138,15 @@ class DatabricksTool:
             state = response["state"]["life_cycle_state"]
             self.logger.info(f"Run ID: {run_id} has state: '{state}'")
 
-        self.logger.info("The job is completed, checking its return.")
-        response = self.check_run_output(run_id=run_id)
-        self.logger.info(f"Run ID: {run_id} has output: '{response}'")
-        return response
+        self.logger.info(f'Response from is: {response}')
+        if response["state"]["result_state"] in ["FAILED", "CANCELED"]:
+            self.logger.error(f"Job failed with error: {response['state']['state_message']}")
+            return {"status": "error", "message": response["state"]["state_message"]}
+        elif response["state"]["result_state"] == "SUCCESS":
+            self.logger.info("The job is completed successfully, checking its return.")
+            job_output = self.check_run_output(run_id=run_id)
+            self.logger.info(f"Run ID: {run_id} has output: '{job_output}' from the notebook.")
+        else:
+            self.logger.error(f"Unknown result state: {response['state']['state_message']}")
+            return {"status": "error", "message": response["state"]["state_message"]}
+        return job_output
