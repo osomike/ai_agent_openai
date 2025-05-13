@@ -1,7 +1,10 @@
 from utils.logger import Logger
+
+from ai_tools.tools.tools_abstract import AIToolsAbstract
 from ai_tools.tools.azure_blob_storage import AzureBlobStorageTool
 from ai_tools.tools.local import LocalStorageTool
 from ai_tools.tools.databricks import DatabricksTool
+
 class ToolsManager:
     def __init__(self, config: dict, logger: Logger = None):
         if logger:
@@ -14,166 +17,22 @@ class ToolsManager:
         self.local_files_tool = LocalStorageTool(config=config)
         self.databricks_tool = DatabricksTool(config=config)
 
-        self.tools = {
-            "list_blob_files": self.azure_blob_tool.list_blob_files,
-            "download_blob": self.azure_blob_tool.download_blob,
-            "upload_blob": self.azure_blob_tool.upload_blob,
-            "delete_blob": self.azure_blob_tool.delete_blob,
-            "list_local_files": self.local_files_tool.list_local_files,
-            "delete_local_file": self.local_files_tool.delete_local_file,
-            "run_databricks_job": self.databricks_tool.run_databricks_job,
-            }
-
-        self.tools_description = [
-            # Azure Blob Storage tools
-            {
-                "type": "function",
-                "function": {
-                    "name": "list_blob_files",
-                    "description":
-                        "List all files in a specified Azure Blob Storage container. If no container is " \
-                        "specified, the default container will be used.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "container_name": {
-                                "type": "string",
-                                "description": "(Optional) The name of the Azure Blob Storage container."
-                            }
-                        },
-                        #"required": ["container_name"]
-                    }
-                }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "download_blob",
-                    "description":
-                        "Download a blob file from Azure Blob Storage. If no container is specified, the default " \
-                        "container will be used.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "blob_name": {
-                                "type": "string",
-                                "description": "The name of the blob file to download."
-                            },
-                            "container_name": {
-                                "type": "string",
-                                "description": "(Optional) The name of the Azure Blob Storage container."
-                            }
-                        },
-                        "required": ["blob_name"]
-                    }
-                }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "upload_blob",
-                    "description":
-                        "Upload a file to an Azure Blob Storage. If no container is specified, the default container " \
-                        "will be used.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "local_file_path": {
-                                "type": "string",
-                                "description": "Local file path of file to upload to the Azure Blob Storage container"
-                            },
-                            "container_name": {
-                                "type": "string",
-                                "description": "(Optional) The name of the Azure Blob Storage container."
-                            }
-                        },
-                        "required": ["local_file_path"]
-                    }
-                }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "delete_blob",
-                    "description":
-                        "Delete a blob file from Azure Blob Storage. If no container is specified, the default " \
-                        "container will be used.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "blob_name": {
-                                "type": "string",
-                                "description": "The name of the blob file to download."
-                            },
-                            "container_name": {
-                                "type": "string",
-                                "description": "(Optional) The name of the Azure Blob Storage container."
-                            }
-                        },
-                        "required": ["blob_name"]
-                    }
-                }
-            },
-            # Local Storage tools
-            {
-                "type": "function",
-                "function": {
-                    "name": "list_local_files",
-                    "description":
-                        "List local files on a given folder path. If no path is specified, the default path will " \
-                        "be used.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "local_folder": {
-                                "type": "string",
-                                "description": "(Optional) The folder path where the files scan will be performed"
-                            }
-                        },
-                        #"required": ["blob_name"]
-                    }
-                }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "delete_local_file",
-                    "description":
-                        "Delete a local file given its full path.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "file_path": {
-                                "type": "string",
-                                "description": "The full file path of the local file to delete"
-                            }
-                        },
-                        "required": ["file_path"]
-                    }
-                }
-            },
-            # Databricks tools
-            {
-                "type": "function",
-                "function": {
-                    "name": "run_databricks_job",
-                    "description":
-                        "Trigger a job inside databricks",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "notebook_path": {
-                                "type": "string",
-                                "description":
-                                    "(Optional) The path of the notebook to trigger. If no path is " \
-                                    " specified, the default container will be used."
-                            }
-                        },
-                        #"required": ["notebook_path"]
-                    }
-                }
-            },
+        self.ai_tools = [
+            self.azure_blob_tool,
+            self.local_files_tool,
+            self.databricks_tool
         ]
+
+        # Initialize the tools dictionary and description
+        # by aggregating the tools from all AI tools instances
+        self.tools = {}
+        self.tools_description = []
+ 
+        for ai_tool in self.ai_tools:
+            if not isinstance(ai_tool, AIToolsAbstract):
+                raise TypeError(f"Tool {ai_tool} is not an instance of AIToolsAbstract")
+            self.tools.update(ai_tool.get_tools())
+            self.tools_description.extend(ai_tool.get_tools_description())
 
     def get_tool(self, name):
         """Get a tool by name."""
