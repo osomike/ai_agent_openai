@@ -5,7 +5,7 @@ from utils.logger import Logger
 from ai_tools.tools.tools_abstract import AIToolsAbstract
 
 class DatabricksTool(AIToolsAbstract):
-    def __init__(self, config: dict, logger: Logger = None):
+    def __init__(self, config: dict, logger: Logger = None, log_level: str = "INFO"):
 
         super().__init__()
         self.cluster_id = config["databricks"]["cluster_id"]
@@ -15,7 +15,7 @@ class DatabricksTool(AIToolsAbstract):
         if logger:
             self.logger = logger
         else:
-            self.logger = Logger(logger_name="Databricks Tool")
+            self.logger = Logger(logger_name="Databricks Tool", log_level=log_level)
 
         self.logger.info("Initializing Databricks Tool")
         self._tools = {

@@ -4,11 +4,11 @@ import tiktoken
 from utils.logger import Logger
 
 class AzureOpenAIInterface:
-    def __init__(self, config: dict, logger: Logger = None):
+    def __init__(self, config: dict, logger: Logger = None, log_level: str = "INFO"):
         if logger:
             self.logger = logger
         else:
-            self.logger = Logger(logger_name="AzureOpenAIInterface")
+            self.logger = Logger(logger_name="AzureOpenAIInterface", log_level=log_level)
 
         self.config = config
 

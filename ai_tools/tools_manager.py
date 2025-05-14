@@ -7,17 +7,17 @@ from ai_tools.tools.databricks import DatabricksTool
 from ai_tools.tools.xpa_survey import XPASurveyTool
 
 class ToolsManager:
-    def __init__(self, config: dict, logger: Logger = None):
+    def __init__(self, config: dict, logger: Logger = None, log_level: str = "INFO"):
         if logger:
             self.logger = logger
         else:
-            self.logger = Logger(logger_name="ToolsManager")
+            self.logger = Logger(logger_name="ToolsManager", log_level=log_level)
 
         # Initialize the tools
-        self.azure_blob_tool = AzureBlobStorageTool(config=config)
-        self.local_files_tool = LocalStorageTool(config=config)
-        self.databricks_tool = DatabricksTool(config=config)
-        self.xpa_survey_tool = XPASurveyTool(config=config)
+        self.azure_blob_tool = AzureBlobStorageTool(config=config, log_level=log_level)
+        self.local_files_tool = LocalStorageTool(config=config, log_level=log_level)
+        self.databricks_tool = DatabricksTool(config=config, log_level=log_level)
+        self.xpa_survey_tool = XPASurveyTool(config=config, log_level=log_level)
 
         self.ai_tools = [
             self.azure_blob_tool,
