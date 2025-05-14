@@ -7,9 +7,10 @@ from utils.text_formatting import format_terminal_text
 from ai_tools.tools_manager import ToolsManager
 
 class AIAgent:
-    def __init__(self, config_path: str, logger: Logger = None):
+    def __init__(self, config_path: str, prompt_path: str, logger: Logger = None):
 
         self.config = ConfigLoader(config_path=config_path).config
+        self.prompts = ConfigLoader(config_path=prompt_path).config
         self.assistant_name = "AI Assistant"
         self.user_name = "Human User"
 
@@ -21,13 +22,12 @@ class AIAgent:
 
         self.logger.info("Initializing AI Agent")
         self.logger.info(f"Config: {self.config}")
+        self.logger.info(f"Prompts: {self.prompts}")
         self.ai_client = AzureOpenAIInterface(config=self.config["azure_openai"])
 
         # Start with a system prompt and empty conversation
-        self.system_prompt = \
-            "You are a helpful AI assistant. You have access to several tools and can use more than one tool if the " \
-            "user request requires it. Always reason about whether one or multiple tool calls are needed before " \
-            "responding."
+        self.system_prompt = self.prompts["agent_settings"]["system_prompt"]
+        
         self.conversation = [{"role": "system", "content": self.system_prompt}]
 
         # Initialize the tools manager

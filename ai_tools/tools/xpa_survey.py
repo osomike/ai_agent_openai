@@ -73,20 +73,20 @@ class XPASurveyTool(DatabricksTool):
                                 "description":
                                     "The sample fraction of the open answers to use to create the categories."
                             },
-                            "question_id": {
+                            "study_id": {
                                 "type": "string",
                                 "description":
-                                    "The question id of the open answers to create the categories for.",
+                                    "The study id containing the survey data.",
                             },
                             "survey_id": {
                                 "type": "string",
                                 "description":
                                     "The survey id containing the open answers to create the categories for.",
                             },
-                            "study_id": {
+                            "question_id": {
                                 "type": "string",
                                 "description":
-                                    "The study id containing the survey data.",
+                                    "The question id of the open answers to create the categories for.",
                             },
                             "language": {
                                 "type": "string",
@@ -94,8 +94,71 @@ class XPASurveyTool(DatabricksTool):
                                     "(Optional) The language of the open answers. Defaults to 'English'.",
                             },
                         },
-                        "required": ["number_of_categories", "sample_fraction", "question_id",
-                                    "survey_id", "study_id"]
+                        "required": ["number_of_categories", "sample_fraction", "study_id", "survey_id", "question_id"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "run_categorization_job",
+                    "description":
+                        "Trigger the categorization job in databricks, for survey open answers from " \
+                        "survey data. This job will categorize the open answers in the survey data. The job will " \
+                        "take the question id, the study id and the survey id as input parameters. A study id can " \
+                        "contain multiple surveys and the surveys can contain multiple questions.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "study_id": {
+                                "type": "string",
+                                "description":
+                                    "The study id containing the survey data.",
+                            },
+                            "survey_id": {
+                                "type": "string",
+                                "description":
+                                    "The survey id containing the open answers to create the categories for.",
+                            },
+                            "question_id": {
+                                "type": "string",
+                                "description":
+                                    "The question id of the open answers to create the categories for.",
+                            }
+                        },
+                        "required": ["study_id", "survey_id", "question_id"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "run_ai_judge_job",
+                    "description":
+                        "Trigger the AI judge job in databricks, for survey open answers from " \
+                        "survey data. This job will validate the results of the categorization job. The job will " \
+                        "take the question id, the study id and the survey id as input parameters. A study id can " \
+                        "contain multiple surveys and the surveys can contain multiple questions.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "study_id": {
+                                "type": "string",
+                                "description":
+                                    "The study id containing the survey data.",
+                            },
+                            "survey_id": {
+                                "type": "string",
+                                "description":
+                                    "The survey id containing the open answers to create the categories for.",
+                            },
+                            "question_id": {
+                                "type": "string",
+                                "description":
+                                    "The question id of the open answers to create the categories for.",
+                            }
+                        },
+                        "required": ["study_id", "survey_id", "question_id"]
                     }
                 }
             }
@@ -138,7 +201,8 @@ class XPASurveyTool(DatabricksTool):
             f"Running ingestion job with input file: {path_to_input_file}, format: {format_file}, sheet: {sheet_name}")
 
         notebook_path = \
-            "/Workspace/Users/oscar.claure@digital-power.com/xpa-ai-agent-poc/survey_agent/data_ingestion"
+            "/Workspace/Users/oscar.claure@digital-power.com/xpa-ai-agent-poc/" \
+            "survey_agent/data_ingestion"
 
         parameters = {
             "file_path": path_to_input_file,
@@ -179,7 +243,8 @@ class XPASurveyTool(DatabricksTool):
         if language in [None, "", "{}"]:
             language = "English"
         notebook_path = \
-            "/Workspace/Users/oscar.claure@digital-power.com/xpa-ai-agent-poc/survey_agent/creation_of_categories"
+            "/Workspace/Users/oscar.claure@digital-power.com/xpa-ai-agent-poc/" \
+            "survey_agent/creation_of_categories"
         parameters = {
             "number_of_categories": number_of_categories,
             "sample_fraction": sample_fraction,
@@ -196,14 +261,66 @@ class XPASurveyTool(DatabricksTool):
 
         return output
 
-    def run_categorization_job(self, notebook_path: str = None, parameters: dict = None) -> dict:
-        self.run_databricks_job(
+    def run_categorization_job(self, question_id: str, study_id: str, survey_id : str) -> dict:
+        """
+        Executes a categorization job on a Databricks notebook for a specific survey question. The catagorization
+        job is designed to categorize open-ended survey responses into already predefined categories
+        (check job run_creation_of_categories_job).
+
+        Args:
+            question_id (str): The unique identifier of the survey question to be categorized.
+            study_id (str): The unique identifier of the study associated with the survey.
+            survey_id (str): The unique identifier of the survey.
+
+        Returns:
+            dict: The output of the Databricks job execution, typically containing the results of the
+            categorization process.
+        """
+        notebook_path = \
+            "/Workspace/Users/oscar.claure@digital-power.com/xpa-ai-agent-poc/" \
+            "survey_agent/classification_into_categories"
+        parameters = {
+            "question_id": question_id,
+            "study_id": study_id,
+            "survey_id": survey_id
+            }
+
+        output = self.run_databricks_job(
             notebook_path=notebook_path,
             parameters=parameters
         )
 
-    def run_ai_judge_job(self, notebook_path: str = None, parameters: dict = None) -> dict:
-        self.run_databricks_job(
+        return output
+
+    def run_ai_judge_job(self, question_id: str, study_id: str, survey_id : str) -> dict:
+        """
+        Executes a Databricks job to validate results for a specific survey question using an AI judge.
+        This method triggers a Databricks notebook job that performs validation on the survey question's
+        categorization results.
+        This method is typically used to ensure the quality and accuracy of the categorization process.
+        The AI judge evaluates the categorization results and provides feedback or validation metrics.
+
+        Args:
+            question_id (str): The unique identifier of the question to be validated.
+            study_id (str): The unique identifier of the study associated with the survey.
+            survey_id (str): The unique identifier of the survey containing the question.
+
+        Returns:
+            dict: The output of the Databricks job execution, typically containing the results of 
+            the validation process.
+        """
+        notebook_path = \
+            "/Workspace/Users/oscar.claure@digital-power.com/xpa-ai-agent-poc/" \
+            "survey_agent/ai_judge_validation"
+        parameters = {
+            "question_id": question_id,
+            "study_id": study_id,
+            "survey_id": survey_id
+            }
+
+        output = self.run_databricks_job(
             notebook_path=notebook_path,
             parameters=parameters
         )
+
+        return output
