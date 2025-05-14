@@ -11,6 +11,7 @@ class XPASurveyTool(DatabricksTool):
         self.logger.info("Initializing Databricks Tool")
         self._tools = {
             "run_ingestion_job": self.run_ingestion_job,
+            "run_creation_of_categories_job": self.run_creation_of_categories_job,
         }
         self._tools_description = [
             {
@@ -18,14 +19,18 @@ class XPASurveyTool(DatabricksTool):
                 "function": {
                     "name": "run_ingestion_job",
                     "description":
-                        "Trigger the ingestion job inside databricks, for survey data ingestion.",
+                        "Trigger the ingestion job inside databricks, for survey data ingestion. This job will " \
+                        "ingest the survey data from the input file. The job will take the file path, the file " \
+                        "format and the sheet name as input parameters. The file format can be 'xlsx' or 'csv'. " \
+                        "The sheet name is only required if the file format is 'xlsx'. The job will create a table " \
+                        "that will be saved in unity catalog inside databricks.",
                     "parameters": {
                         "type": "object",
                         "properties": {
                             "path_to_input_file": {
                                 "type": "string",
                                 "description":
-                                    "The file path pointint to the file containing the survey data"
+                                    "The file path pointint to the file containing the survey data."
                             },
                             "format_file": {
                                 "type": "string",
@@ -40,6 +45,57 @@ class XPASurveyTool(DatabricksTool):
                             },
                         },
                         "required": ["path_to_input_file"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "run_creation_of_categories_job",
+                    "description":
+                        "Trigger the creation of categories job in databricks, for survey open answers from " \
+                        "survey data. This job will create categories for the open answers in the survey data. " \
+                        "The categories will be created using the AI model. The job will take the " \
+                        "number of categories to create, the sample fraction of the open answers to use to create " \
+                        "the categories, the question id, the study id, the survey id and the language on which the " \
+                        "answers are written as input parameters. A study id can contain multiple surveys and the " \
+                        "surveys can contain multiple questions.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "number_of_categories": {
+                                "type": "string",
+                                "description":
+                                    "The number of categories to create for the open answers."
+                            },
+                            "sample_fraction": {
+                                "type": "string",
+                                "description":
+                                    "The sample fraction of the open answers to use to create the categories."
+                            },
+                            "question_id": {
+                                "type": "string",
+                                "description":
+                                    "The question id of the open answers to create the categories for.",
+                            },
+                            "survey_id": {
+                                "type": "string",
+                                "description":
+                                    "The survey id containing the open answers to create the categories for.",
+                            },
+                            "study_id": {
+                                "type": "string",
+                                "description":
+                                    "The study id containing the survey data.",
+                            },
+                            "language": {
+                                "type": "string",
+                                "description":
+                                    "(Optional) The language of the open answers. Defaults to 'English'.",
+                            },
+                        },
+                        "required": ["number_of_categories", "sample_fraction", "question_id",
+                                    "survey_id", "study_id"]
                     }
                 }
             }
@@ -84,6 +140,10 @@ class XPASurveyTool(DatabricksTool):
             survey_id : str,
             language: str = "English") -> dict:
 
+        number_of_categories = int(number_of_categories)
+        sample_fraction = float(sample_fraction)
+        if language in [None, "", "{}"]:
+            language = "English"
         notebook_path = \
             "/Workspace/Users/oscar.claure@digital-power.com/xpa-ai-agent-poc/survey_agent/creation_of_categories"
         parameters = {
