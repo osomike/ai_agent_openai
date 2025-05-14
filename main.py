@@ -1,8 +1,9 @@
 """Main entry point for the AI Agent application."""
 
-from core.ai_agent import AIAgent
-import argparse
 import logging
+import argparse
+
+from core.ai_agent import AIAgent
 
 # Parse command-line arguments for log level
 parser = argparse.ArgumentParser(description="AI Agent Application")
