@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser(description="AI Agent Application")
 parser.add_argument(
     "--log-level",
     type=str,
-    default="WARNING",
+    default="INFO",
     choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
     help="Set the logging level (default: INFO)"
 )
