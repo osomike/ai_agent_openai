@@ -102,6 +102,27 @@ class XPASurveyTool(DatabricksTool):
         ]
 
     def run_ingestion_job(self, path_to_input_file: str, format_file: str = "xlsx", sheet_name: str = "Export") -> dict:
+        """
+        Executes an ingestion job to process a file and load its data.
+
+        This method validates the input file format and sheet name, constructs the file path,
+        and triggers a Databricks notebook job to handle the ingestion process.
+
+        Args:
+            path_to_input_file (str): The relative path to the input file to be ingested.
+            format_file (str, optional): The format of the input file. Defaults to "xlsx".
+                                         Supported formats are "xlsx" and "csv".
+            sheet_name (str, optional): The name of the sheet to process in the input file.
+                                        Defaults to "Export".
+
+        Returns:
+            dict: A dictionary containing the status and message of the ingestion job.
+                  Example:
+                  {
+                      "status": "success" or "error",
+                      "message": "Details about the job execution"
+                    }
+        """
 
         if format_file in [None, "", "{}"]:
             format_file = "xlsx"
@@ -139,7 +160,20 @@ class XPASurveyTool(DatabricksTool):
             study_id: str,
             survey_id : str,
             language: str = "English") -> dict:
+        """
+        Executes a Databricks job to create categories for a survey question.
 
+        Args:
+            number_of_categories (int): The number of categories to create.
+            sample_fraction (float): The fraction of the sample to use for category creation.
+            question_id (str): The ID of the question for which categories are being created.
+            study_id (str): The ID of the study associated with the survey.
+            survey_id (str): The ID of the survey.
+            language (str, optional): The language for the categories. Defaults to "English".
+
+        Returns:
+            dict: The output of the Databricks job execution.
+        """
         number_of_categories = int(number_of_categories)
         sample_fraction = float(sample_fraction)
         if language in [None, "", "{}"]:
