@@ -4,7 +4,7 @@ from ai_tools.tools.tools_abstract import AIToolsAbstract
 
 class LocalStorageTool(AIToolsAbstract):
 
-    def __init__(self, config: dict, logger: Logger = None):
+    def __init__(self, config: dict, logger: Logger = None, log_level: str = "INFO"):
 
         super().__init__()
         self.default_local_folder = config["local_storage"]["folder"]
@@ -12,7 +12,7 @@ class LocalStorageTool(AIToolsAbstract):
         if logger:
             self.logger = logger
         else:
-            self.logger = Logger(logger_name="Local Storage Tool")
+            self.logger = Logger(logger_name="Local Storage Tool", log_level=log_level)
 
         self.logger.info("Initializing Local Storage Manager")
 

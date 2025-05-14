@@ -8,7 +8,7 @@ from utils.logger import Logger
 
 class AzureBlobStorageTool(AIToolsAbstract):
 
-    def __init__(self, config: dict, logger : Logger = None):
+    def __init__(self, config: dict, logger : Logger = None, log_level: str = "INFO"):
 
         super().__init__()
         self.connection_string = config["azure_blob"]["connection_string"]
@@ -18,7 +18,7 @@ class AzureBlobStorageTool(AIToolsAbstract):
         if logger:
             self.logger = logger
         else:
-            self.logger = Logger(logger_name="Blob Storage Manager")
+            self.logger = Logger(logger_name="Blob Storage Manager", log_level=log_level)
 
         self.logger.info("Initializing Azure Blob Storage Manager")
         self._tools = {

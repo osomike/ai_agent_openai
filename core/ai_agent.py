@@ -7,23 +7,22 @@ from utils.text_formatting import format_terminal_text
 from ai_tools.tools_manager import ToolsManager
 
 class AIAgent:
-    def __init__(self, config_path: str, prompt_path: str, logger: Logger = None):
+    def __init__(self, config_path: str, prompt_path: str, logger: Logger = None, log_level: str = "INFO"):
 
-        self.config = ConfigLoader(config_path=config_path).config
-        self.prompts = ConfigLoader(config_path=prompt_path).config
+        self.config = ConfigLoader(config_path=config_path, log_level=log_level).config
+        self.prompts = ConfigLoader(config_path=prompt_path, log_level=log_level).config
         self.assistant_name = "AI Assistant"
         self.user_name = "Human User"
-
 
         if logger:
             self.logger = logger
         else:
-            self.logger = Logger(logger_name="AI Agent")
+            self.logger = Logger(logger_name="AI Agent", log_level=log_level)
 
         self.logger.info("Initializing AI Agent")
-        self.logger.info(f"Config: {self.config}")
-        self.logger.info(f"Prompts: {self.prompts}")
-        self.ai_client = AzureOpenAIInterface(config=self.config["azure_openai"])
+        self.logger.debug(f"Config: {self.config}")
+        self.logger.debug(f"Prompts: {self.prompts}")
+        self.ai_client = AzureOpenAIInterface(config=self.config["azure_openai"], log_level=log_level)
 
         # Start with a system prompt and empty conversation
         self.system_prompt = self.prompts["agent_settings"]["system_prompt"]
@@ -31,7 +30,7 @@ class AIAgent:
         self.conversation = [{"role": "system", "content": self.system_prompt}]
 
         # Initialize the tools manager
-        self.tools_manager = ToolsManager(config=self.config)
+        self.tools_manager = ToolsManager(config=self.config, log_level=log_level)
 
         # Initialize the text formatting
         self.formatted_names = {

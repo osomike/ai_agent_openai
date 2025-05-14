@@ -2,7 +2,7 @@ import yaml
 from utils.logger import Logger
 
 class ConfigLoader:
-    def __init__(self, config_path : str, logger: Logger = None):
+    def __init__(self, config_path : str, logger: Logger = None, log_level: str = "INFO"):
         """
         Responsible for loading and managing configuration files.
 
@@ -18,7 +18,7 @@ class ConfigLoader:
         if logger:
             self.logger = logger
         else:
-            self.logger = Logger(logger_name="ConfigLoader")
+            self.logger = Logger(logger_name="ConfigLoader", log_level=log_level)
 
         # Load the config file
         self.config = self.load_config()

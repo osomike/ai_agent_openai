@@ -5,9 +5,9 @@ from ai_tools.tools.databricks import DatabricksTool
 
 class XPASurveyTool(DatabricksTool):
 
-    def __init__(self, config: dict, logger: Logger = None):
+    def __init__(self, config: dict, logger: Logger = None, log_level: str = "INFO"):
 
-        super().__init__(config=config, logger=logger)
+        super().__init__(config=config, logger=logger, log_level=log_level)
         self.logger.info("Initializing Databricks Tool")
         self._tools = {
             "run_ingestion_job": self.run_ingestion_job,
