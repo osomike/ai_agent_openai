@@ -12,6 +12,8 @@ class XPASurveyTool(DatabricksTool):
         self._tools = {
             "run_ingestion_job": self.run_ingestion_job,
             "run_creation_of_categories_job": self.run_creation_of_categories_job,
+            "run_categorization_job": self.run_categorization_job,
+            "run_ai_judge_job": self.run_ai_judge_job
         }
         self._tools_description = [
             {
@@ -71,7 +73,8 @@ class XPASurveyTool(DatabricksTool):
                             "sample_fraction": {
                                 "type": "string",
                                 "description":
-                                    "The sample fraction of the open answers to use to create the categories."
+                                    "The sample fraction of the open answers to use to create the categories. " \
+                                    "Preferably use sample sizes between 0.03 and 0.1." \
                             },
                             "study_id": {
                                 "type": "string",
