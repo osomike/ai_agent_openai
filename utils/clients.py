@@ -1,10 +1,12 @@
 import openai
 import tiktoken
 
+from typing import Optional
+import logging
 from utils.logger import Logger
 
 class AzureOpenAIInterface:
-    def __init__(self, config: dict, logger: Logger = None, log_level: str = "INFO"):
+    def __init__(self, config: dict, logger: Optional[Logger] = None, log_level: int = logging.INFO):
         if logger:
             self.logger = logger
         else:

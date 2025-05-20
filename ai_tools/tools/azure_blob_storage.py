@@ -1,5 +1,7 @@
 import os
+from typing import Optional
 
+import logging
 from azure.storage.blob import ContainerClient
 from azure.core import exceptions as azure_exceptions
 
@@ -8,7 +10,7 @@ from utils.logger import Logger
 
 class AzureBlobStorageTool(AIToolsAbstract):
 
-    def __init__(self, config: dict, logger : Logger = None, log_level: str = "INFO"):
+    def __init__(self, config: dict, logger : Optional[Logger] = None, log_level: int = logging.INFO):
 
         super().__init__()
         self.connection_string = config["azure_blob"]["connection_string"]
@@ -119,7 +121,7 @@ class AzureBlobStorageTool(AIToolsAbstract):
             },
         ]
 
-    def list_blob_files(self, container_name: str = None) -> list:
+    def list_blob_files(self, container_name: Optional[str] = None) -> dict:
         """
         Lists all blob files in the specified Azure Blob Storage container.
 
@@ -156,7 +158,7 @@ class AzureBlobStorageTool(AIToolsAbstract):
 
         return {"container_name": container_name, "files": files}
 
-    def download_blob(self, blob_name: str, container_name: str = None) -> list:
+    def download_blob(self, blob_name: str, container_name: str = None) -> dict:
         """
         Downloads a blob from an Azure Blob Storage container to a local file.
 
@@ -201,7 +203,7 @@ class AzureBlobStorageTool(AIToolsAbstract):
 
         return {"container_name": container_name, "output_file": output_file, "status": status}
 
-    def upload_blob(self, local_file_path: str, target_folder : str = "drop_zone", container_name: str = None) -> list:
+    def upload_blob(self, local_file_path: str, target_folder : str = "drop_zone", container_name: Optional[str] = None) -> list:
         """
         Uploads a local file to an Azure Blob Storage container.
 
@@ -253,7 +255,7 @@ class AzureBlobStorageTool(AIToolsAbstract):
 
         return {"container_name": container_name, "output_blob": output_blob, "status": status}
 
-    def delete_blob(self, blob_name: str, container_name: str = None) -> dict:
+    def delete_blob(self, blob_name: str, container_name: Optional[str] = None) -> dict:
         """
         Deletes a blob from the specified Azure Blob Storage container.
 

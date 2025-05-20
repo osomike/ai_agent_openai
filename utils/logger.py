@@ -1,6 +1,7 @@
 import logging
 import os
 import datetime
+from typing import Optional
 
 
 class Logger:
@@ -9,8 +10,8 @@ class Logger:
     """
     def __init__(self, logger_name: str = "Default Logger", log_level=logging.INFO, log_to_stdout: bool = True,
                  log_to_file: bool = False, log_file_folder_path: str ="./",
-                 prefix: str = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S"),
-                 logger_name_max_length: int = None) -> None:
+                 logger_name_max_length: Optional[int] = None, prefix: str = 'log') -> None:
+
         """
         Initializes the DiPLogger.
 

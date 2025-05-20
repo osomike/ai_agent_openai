@@ -1,10 +1,12 @@
 import os
+from typing import Optional
+import logging
 from utils.logger import Logger
 from ai_tools.tools.tools_abstract import AIToolsAbstract
 
 class LocalStorageTool(AIToolsAbstract):
 
-    def __init__(self, config: dict, logger: Logger = None, log_level: str = "INFO"):
+    def __init__(self, config: dict, logger: Optional[Logger] = None, log_level: int = logging.INFO):
 
         super().__init__()
         self.default_local_folder = config["local_storage"]["folder"]
