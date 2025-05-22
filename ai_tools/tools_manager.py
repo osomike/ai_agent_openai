@@ -1,3 +1,5 @@
+from typing import Optional
+import logging
 from utils.logger import Logger
 
 from ai_tools.tools.tools_abstract import AIToolsAbstract
@@ -7,7 +9,7 @@ from ai_tools.tools.databricks import DatabricksTool
 from ai_tools.tools.xpa_survey import XPASurveyTool
 
 class ToolsManager:
-    def __init__(self, config: dict, logger: Logger = None, log_level: str = "INFO"):
+    def __init__(self, config: dict, logger: Optional[Logger] = None, log_level: int = logging.INFO):
         if logger:
             self.logger = logger
         else:
@@ -64,7 +66,12 @@ class ToolsManager:
         """
         if tool_name in self.list_tools():
             self.logger.info(f"Executing tool: '{tool_name}' with arguments: '{arguments}'")
-            return self.get_tool(tool_name)(**arguments)
+            tool = self.get_tool(tool_name)
+            if callable(tool):
+                return tool(**arguments)
+
+            self.logger.error(f"Tool '{tool_name}' is not callable.")
+            return {"error": f"Tool '{tool_name}' is not callable."}
 
         self.logger.error(f"Unknown tool: '{tool_name}'")
         return {"error": f"Unknown tool '{tool_name}'"}

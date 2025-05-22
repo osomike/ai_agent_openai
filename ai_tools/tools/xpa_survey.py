@@ -1,11 +1,13 @@
 import os
+from typing import Optional
 
+import logging
 from utils.logger import Logger
 from ai_tools.tools.databricks import DatabricksTool
 
 class XPASurveyTool(DatabricksTool):
 
-    def __init__(self, config: dict, logger: Logger = None, log_level: str = "INFO"):
+    def __init__(self, config: dict, logger: Optional[Logger] = None, log_level: int = logging.INFO):
 
         super().__init__(config=config, logger=logger, log_level=log_level)
         self.logger.info("Initializing Databricks Tool")

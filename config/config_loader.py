@@ -1,8 +1,12 @@
+from typing import Optional
+import logging
 import yaml
+
 from utils.logger import Logger
 
 class ConfigLoader:
-    def __init__(self, config_path : str, logger: Logger = None, log_level: str = "INFO"):
+
+    def __init__(self, config_path : str, logger: Optional[Logger] = None, log_level: int = logging.INFO):
         """
         Responsible for loading and managing configuration files.
 

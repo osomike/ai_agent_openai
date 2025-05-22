@@ -1,5 +1,7 @@
 import json
+from typing import Optional
 
+import logging
 from config.config_loader import ConfigLoader
 from utils.clients import AzureOpenAIInterface
 from utils.logger import Logger
@@ -7,7 +9,8 @@ from utils.text_formatting import format_terminal_text
 from ai_tools.tools_manager import ToolsManager
 
 class AIAgent:
-    def __init__(self, config_path: str, prompt_path: str, logger: Logger = None, log_level: str = "INFO"):
+    def __init__(self, config_path: str, prompt_path: str, logger: Optional[Logger] = None,
+                 log_level: int = logging.INFO):
 
         self.config = ConfigLoader(config_path=config_path, log_level=log_level).config
         self.prompts = ConfigLoader(config_path=prompt_path, log_level=log_level).config

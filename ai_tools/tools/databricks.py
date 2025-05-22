@@ -1,3 +1,6 @@
+from typing import Optional
+import logging
+
 import time
 import requests
 
@@ -5,7 +8,8 @@ from utils.logger import Logger
 from ai_tools.tools.tools_abstract import AIToolsAbstract
 
 class DatabricksTool(AIToolsAbstract):
-    def __init__(self, config: dict, logger: Logger = None, log_level: str = "INFO"):
+
+    def __init__(self, config: dict, logger: Optional[Logger] = None, log_level: int = logging.INFO):
 
         super().__init__()
         self.cluster_id = config["databricks"]["cluster_id"]
@@ -50,7 +54,7 @@ class DatabricksTool(AIToolsAbstract):
             }
         ]
 
-    def trigger_notebook(self, notebook_path: str, parameters: dict = None) -> dict:
+    def trigger_notebook(self, notebook_path: str, parameters: Optional[dict] = None) -> dict:
         """
         Triggers a Databricks notebook job.
 
@@ -137,7 +141,7 @@ class DatabricksTool(AIToolsAbstract):
             return {"status": "error", "message": str(e)}
 
 
-    def run_databricks_job(self, notebook_path: str, parameters: dict = None) -> dict:
+    def run_databricks_job(self, notebook_path: str, parameters: Optional[dict] = None) -> dict:
         """
         Executes a Databricks notebook job and monitors its status until completion.
 
