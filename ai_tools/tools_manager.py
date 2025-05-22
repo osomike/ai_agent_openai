@@ -69,9 +69,9 @@ class ToolsManager:
             tool = self.get_tool(tool_name)
             if callable(tool):
                 return tool(**arguments)
-            else:
-                self.logger.error(f"Tool '{tool_name}' is not callable.")
-                return {"error": f"Tool '{tool_name}' is not callable."}
+
+            self.logger.error(f"Tool '{tool_name}' is not callable.")
+            return {"error": f"Tool '{tool_name}' is not callable."}
 
         self.logger.error(f"Unknown tool: '{tool_name}'")
         return {"error": f"Unknown tool '{tool_name}'"}

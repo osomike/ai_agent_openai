@@ -1,8 +1,9 @@
+from typing import Optional
+import logging
+
 import time
 import requests
-from typing import Optional
 
-import logging
 from utils.logger import Logger
 from ai_tools.tools.tools_abstract import AIToolsAbstract
 
@@ -139,8 +140,6 @@ class DatabricksTool(AIToolsAbstract):
             self.logger.error(f"Failed to retrieve run output: {e}")
             return {"status": "error", "message": str(e)}
 
-
-    from typing import Optional
 
     def run_databricks_job(self, notebook_path: str, parameters: Optional[dict] = None) -> dict:
         """

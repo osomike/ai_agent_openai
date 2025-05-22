@@ -1,8 +1,6 @@
+from typing import Optional
 import logging
 import os
-import datetime
-from typing import Optional
-
 
 class Logger:
     """

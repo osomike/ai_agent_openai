@@ -3,7 +3,6 @@ from typing import Optional
 import logging
 from utils.logger import Logger
 from ai_tools.tools.tools_abstract import AIToolsAbstract
-from typing import Optional
 
 class LocalStorageTool(AIToolsAbstract):
 

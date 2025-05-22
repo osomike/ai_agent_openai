@@ -1,11 +1,13 @@
-import openai
-import tiktoken
-
 import logging
-from utils.logger import Logger
 from typing import Optional, List, Iterable
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionAssistantMessageParam, \
     ChatCompletionUserMessageParam, ChatCompletionSystemMessageParam, ChatCompletionToolMessageParam
+
+import openai
+import tiktoken
+
+from utils.logger import Logger
+
 
 class AzureOpenAIInterface:
     def __init__(self, config: dict, logger: Optional[Logger] = None, log_level: int = logging.INFO):
@@ -64,6 +66,23 @@ class AzureOpenAIInterface:
         return encoding
 
     def validate_messages(self, messages: Iterable[dict]) -> List[ChatCompletionMessageParam]:
+        """
+        Validates and converts a sequence of message dictionaries into their corresponding
+        ChatCompletionMessageParam objects.
+
+        Each message dictionary must contain 'role' and 'content' keys, and the 'role' must be
+        one of: 'user', 'assistant', 'system', or 'tool'. The method raises a ValueError if any
+        message is not a dictionary, is missing required keys, or has an invalid role.
+
+        Args:
+            messages (Iterable[dict]): An iterable of message dictionaries to validate and convert.
+
+        Returns:
+            List[ChatCompletionMessageParam]: A list of validated and instantiated message objects.
+
+        Raises:
+            ValueError: If a message is not a dictionary, is missing required keys, or has an invalid role.
+        """
         validated_messages = []
 
         d = {
@@ -97,7 +116,7 @@ class AzureOpenAIInterface:
         """
         self.logger.info("Generating chat completion")
         try:
-            self.logger.debug(f"Validating messages paramneters before sending to the LLM...")
+            self.logger.debug("Validating messages paramneters before sending to the LLM...")
             validated_conversation = self.validate_messages(conversation)
 
             response = self.client.chat.completions.create(

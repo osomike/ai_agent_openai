@@ -1,7 +1,7 @@
-import yaml
 from typing import Optional
-
 import logging
+import yaml
+
 from utils.logger import Logger
 
 class ConfigLoader:

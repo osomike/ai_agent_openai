@@ -140,7 +140,7 @@ class AzureBlobStorageTool(AIToolsAbstract):
 
         if container_name in [None, "", "{}"]:
             container_name = self.default_container
-  
+
         if not isinstance(container_name, str):
             container_name = str(container_name)
 
