@@ -1,9 +1,11 @@
 import openai
 import tiktoken
 
-from typing import Optional
 import logging
 from utils.logger import Logger
+from typing import Optional, List, Iterable
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionAssistantMessageParam, \
+    ChatCompletionUserMessageParam, ChatCompletionSystemMessageParam, ChatCompletionToolMessageParam
 
 class AzureOpenAIInterface:
     def __init__(self, config: dict, logger: Optional[Logger] = None, log_level: int = logging.INFO):
@@ -44,7 +46,7 @@ class AzureOpenAIInterface:
 
         return client
 
-    def initialize_encoder(self):
+    def initialize_encoder(self) -> tiktoken.Encoding:
         """
         Returns the encoder for the specified model.
         """
@@ -61,6 +63,27 @@ class AzureOpenAIInterface:
 
         return encoding
 
+    def validate_messages(self, messages: Iterable[dict]) -> List[ChatCompletionMessageParam]:
+        validated_messages = []
+
+        d = {
+            "user": ChatCompletionUserMessageParam,
+            "assistant": ChatCompletionAssistantMessageParam,
+            "system": ChatCompletionSystemMessageParam,
+            "tool": ChatCompletionToolMessageParam,}
+        for message in messages:
+            if not isinstance(message, dict):
+                raise ValueError("Each message must be a dictionary.")
+            if "role" not in message or "content" not in message:
+                raise ValueError("Each message must contain 'role' and 'content' keys.")
+
+            message_class = d.get(message["role"])
+            if message_class is None:
+                raise ValueError(f"Invalid role '{message['role']}' in message.")
+            msg = message_class(**message)
+            validated_messages.append(msg)
+        return validated_messages
+
     def chat_completitions(self, conversation: list[dict], max_tokens: int = 10000, **kwargs):
         """
         Generates a chat completion using the OpenAI client.
@@ -74,8 +97,11 @@ class AzureOpenAIInterface:
         """
         self.logger.info("Generating chat completion")
         try:
+            self.logger.debug(f"Validating messages paramneters before sending to the LLM...")
+            validated_conversation = self.validate_messages(conversation)
+
             response = self.client.chat.completions.create(
-                messages=conversation,
+                messages=validated_conversation,
                 model=self.deployment,
                 max_completion_tokens=max_tokens,
                 **kwargs
