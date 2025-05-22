@@ -15,7 +15,7 @@ class AzureBlobStorageTool(AIToolsAbstract):
         super().__init__()
         self.connection_string = config["azure_blob"]["connection_string"]
         self.local_folder = config["local_storage"]["folder"]
-        self.default_container = config["azure_blob"]["default_container"]
+        self.default_container = str(config["azure_blob"]["default_container"])
 
         if logger:
             self.logger = logger
@@ -140,6 +140,9 @@ class AzureBlobStorageTool(AIToolsAbstract):
 
         if container_name in [None, "", "{}"]:
             container_name = self.default_container
+  
+        if not isinstance(container_name, str):
+            container_name = str(container_name)
 
         self.logger.debug(f"Listing blobs in container: '{container_name}'")
 
@@ -158,7 +161,7 @@ class AzureBlobStorageTool(AIToolsAbstract):
 
         return {"container_name": container_name, "files": files}
 
-    def download_blob(self, blob_name: str, container_name: str = None) -> dict:
+    def download_blob(self, blob_name: str, container_name: Optional[str] = None) -> dict:
         """
         Downloads a blob from an Azure Blob Storage container to a local file.
 
@@ -181,6 +184,9 @@ class AzureBlobStorageTool(AIToolsAbstract):
         if container_name in [None, ""]:
             container_name = self.default_container
 
+        if not isinstance(container_name, str):
+            container_name = str(container_name)
+
         self.logger.debug(f"Downloading: '{blob_name}' from container: '{container_name}'")
 
         container_client = ContainerClient.from_connection_string(
@@ -188,10 +194,10 @@ class AzureBlobStorageTool(AIToolsAbstract):
             container_name=container_name
         )
 
-        try:
-            output_file = os.path.join(self.local_folder, os.path.basename(blob_name))
-            self.logger.info(f"Downloading blob to: '{output_file}'")
+        output_file = os.path.join(self.local_folder, os.path.basename(blob_name))
+        self.logger.info(f"Downloading blob to: '{output_file}'")
 
+        try:
             with open(file=output_file, mode="wb") as sample_blob:
                 download_stream = container_client.download_blob(blob=blob_name)
                 sample_blob.write(download_stream.readall())
@@ -203,7 +209,8 @@ class AzureBlobStorageTool(AIToolsAbstract):
 
         return {"container_name": container_name, "output_file": output_file, "status": status}
 
-    def upload_blob(self, local_file_path: str, target_folder : str = "drop_zone", container_name: Optional[str] = None) -> list:
+    def upload_blob(self, local_file_path: str, target_folder : str = "drop_zone",
+                    container_name: Optional[str] = None) -> dict:
         """
         Uploads a local file to an Azure Blob Storage container.
 
@@ -230,8 +237,14 @@ class AzureBlobStorageTool(AIToolsAbstract):
         if container_name in [None, "", "{}"]:
             container_name = self.default_container
 
+        if not isinstance(container_name, str):
+            container_name = str(container_name)
+
         if target_folder in [None, "", "{}"]:
             target_folder = "drop_zone"
+
+        if not isinstance(target_folder, str):
+            target_folder = str(target_folder)
 
         self.logger.debug(
             f"Attempting to upload: '{local_file_path}' to container: '{container_name}' in folder: " \
@@ -242,10 +255,10 @@ class AzureBlobStorageTool(AIToolsAbstract):
             container_name=container_name
         )
 
-        try:
-            output_blob = os.path.join(target_folder, os.path.basename(local_file_path))
+        output_blob = os.path.join(target_folder, os.path.basename(local_file_path))
+        self.logger.info(f"Uploading blob to: '{output_blob}'")
 
-            self.logger.info(f"Uploading blob to: '{output_blob}'")
+        try:
             with open(file=local_file_path, mode="rb") as data:
                 container_client.upload_blob(name=output_blob, data=data, overwrite=True)
             status = "success"
@@ -272,6 +285,9 @@ class AzureBlobStorageTool(AIToolsAbstract):
         """
         if container_name in [None, "", "{}"]:
             container_name = self.default_container
+
+        if not isinstance(container_name, str):
+            container_name = str(container_name)
 
         self.logger.debug(f"Deleting: '{blob_name}' from container: '{container_name}'")
 
