@@ -1,10 +1,12 @@
 import os
+from typing import Optional
+import logging
 from utils.logger import Logger
 from ai_tools.tools.tools_abstract import AIToolsAbstract
 
 class LocalStorageTool(AIToolsAbstract):
 
-    def __init__(self, config: dict, logger: Logger = None, log_level: str = "INFO"):
+    def __init__(self, config: dict, logger: Optional[Logger] = None, log_level: int = logging.INFO):
 
         super().__init__()
         self.default_local_folder = config["local_storage"]["folder"]
@@ -61,7 +63,7 @@ class LocalStorageTool(AIToolsAbstract):
             },
         ]
 
-    def list_local_files(self, local_folder: str) -> dict:
+    def list_local_files(self, local_folder: Optional[str] = None) -> dict:
         """
         Lists the files in a specified local folder.
 
@@ -77,7 +79,12 @@ class LocalStorageTool(AIToolsAbstract):
         """
         if local_folder in [None, "", "{}"]:
             local_folder = self.default_local_folder
+
+        if not isinstance(local_folder, str):
+            local_folder = str(local_folder)
+
         self.logger.debug(f"Listing files in local folder: '{local_folder}'")
+
         try:
             files = os.listdir(local_folder)
             self.logger.debug(f"Found {len(files)} files in local folder.")

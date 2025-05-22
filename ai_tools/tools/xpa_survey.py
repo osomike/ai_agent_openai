@@ -1,17 +1,21 @@
 import os
+from typing import Optional
 
+import logging
 from utils.logger import Logger
 from ai_tools.tools.databricks import DatabricksTool
 
 class XPASurveyTool(DatabricksTool):
 
-    def __init__(self, config: dict, logger: Logger = None, log_level: str = "INFO"):
+    def __init__(self, config: dict, logger: Optional[Logger] = None, log_level: int = logging.INFO):
 
         super().__init__(config=config, logger=logger, log_level=log_level)
         self.logger.info("Initializing Databricks Tool")
         self._tools = {
             "run_ingestion_job": self.run_ingestion_job,
             "run_creation_of_categories_job": self.run_creation_of_categories_job,
+            "run_categorization_job": self.run_categorization_job,
+            "run_ai_judge_job": self.run_ai_judge_job
         }
         self._tools_description = [
             {
@@ -71,7 +75,8 @@ class XPASurveyTool(DatabricksTool):
                             "sample_fraction": {
                                 "type": "string",
                                 "description":
-                                    "The sample fraction of the open answers to use to create the categories."
+                                    "The sample fraction of the open answers to use to create the categories. " \
+                                    "Preferably use sample sizes between 0.03 and 0.1." \
                             },
                             "study_id": {
                                 "type": "string",
